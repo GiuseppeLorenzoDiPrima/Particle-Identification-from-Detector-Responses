@@ -1,0 +1,218 @@
+"""
+Particle Identification from Detector Responses
+================================================
+
+Entry point del progetto. Esegue la pipeline completa:
+
+  Fase 1: Caricamento dati e visualizzazione esplorativa
+  Fase 2: Baseline a tagli fisici (cuts-based PID)
+  Fase 3: Modelli di ML classici (LR, KNN, DT, RF, XGBoost)
+  Fase 4: Deep Learning (MLP con PyTorch)
+  Fase 5: Interpretabilita' (SHAP) e Uncertainty (MC Dropout)
+  Fase 6: Valutazione finale e confronto
+
+Uso:
+    python main.py                  # pipeline completa
+    python main.py --phase 1        # solo una fase
+    python main.py --phases 1 2 3   # fasi selezionate
+    python main.py --config my.yaml # configurazione custom
+    python main.py --quick          # run veloce (100k campioni)
+"""
+
+import argparse
+import logging
+import os
+import sys
+import time
+
+from src.data_loader import load_config, load_and_preprocess
+from src.visualization import (
+    setup_style,
+    plot_bethe_bloch,
+    plot_feature_distributions,
+    plot_class_distribution,
+    plot_correlation_matrix,
+)
+from src.baseline import run_baseline
+from src.classical_models import train_and_evaluate, plot_feature_importance
+from src.deep_learning import train_mlp, plot_training_history
+from src.evaluation import generate_full_report
+from src.interpretability import run_shap_analysis
+from src.uncertainty import run_uncertainty_analysis
+
+
+def setup_logging(config: dict):
+    """
+    Configura il logging su console e file.
+
+    Console: mostra solo i messaggi del progetto (src.* e main),
+             formato compatto senza timestamp.
+    File:    registra tutto (incluso shap, matplotlib, ecc.)
+             con timestamp completo.
+    """
+    results_dir = config["paths"]["results_dir"]
+    os.makedirs(results_dir, exist_ok=True)
+
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+
+    # --- File handler: tutto, verbose ---
+    file_handler = logging.FileHandler(
+        os.path.join(results_dir, "run.log"), mode="w", encoding="utf-8"
+    )
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%H:%M:%S"
+    ))
+    root.addHandler(file_handler)
+
+    # --- Console handler: solo progetto, compatto ---
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(logging.Formatter("%(message)s"))
+
+    # Filtra: mostra solo logger del progetto (src.*, main, __main__)
+    class ProjectFilter(logging.Filter):
+        def filter(self, record):
+            return record.name in ("main", "__main__") or record.name.startswith("src.")
+
+    console_handler.addFilter(ProjectFilter())
+    root.addHandler(console_handler)
+
+    # Silenzia logger rumorosi sulla console (restano nel file)
+    for noisy in ("shap", "matplotlib", "PIL", "numba", "xgboost"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Particle Identification - ML Pipeline"
+    )
+    parser.add_argument(
+        "--config", type=str, default="config.yaml",
+        help="Percorso al file di configurazione YAML",
+    )
+    parser.add_argument(
+        "--phase", type=int, default=None,
+        help="Esegui solo una fase specifica (1-6)",
+    )
+    parser.add_argument(
+        "--phases", type=int, nargs="+", default=None,
+        help="Esegui solo le fasi specificate (es. --phases 1 2 3)",
+    )
+    parser.add_argument(
+        "--quick", action="store_true",
+        help="Run veloce con max 100k campioni",
+    )
+    return parser.parse_args()
+
+
+def should_run(phase: int, args) -> bool:
+    """Determina se una fase deve essere eseguita."""
+    if args.phase is not None:
+        return phase == args.phase
+    if args.phases is not None:
+        return phase in args.phases
+    return True
+
+
+def main():
+    args = parse_args()
+    config = load_config(args.config)
+
+    # Quick mode: limita i campioni
+    if args.quick:
+        config["dataset"]["max_samples"] = 100_000
+        config["deep_learning"]["epochs"] = 15
+        config["interpretability"]["shap_samples"] = 200
+        config["uncertainty"]["mc_dropout_iterations"] = 20
+
+    setup_logging(config)
+    logger = logging.getLogger("main")
+
+    logger.info("=" * 60)
+    logger.info("  PARTICLE IDENTIFICATION FROM DETECTOR RESPONSES")
+    logger.info("  Pipeline di Machine Learning per Fisica delle Particelle")
+    logger.info("=" * 60)
+
+    t_start = time.time()
+    all_results = {}
+
+    # ================================================================
+    # FASE 1: Caricamento dati e visualizzazione esplorativa
+    # ================================================================
+    if should_run(1, args):
+        logger.info("\n" + "=" * 50)
+        logger.info("FASE 1: Caricamento dati e visualizzazione")
+        logger.info("=" * 50)
+
+        data = load_and_preprocess(config)
+        setup_style(config)
+
+        logger.info("Generazione visualizzazioni esplorative...")
+        plot_bethe_bloch(data, config)
+        plot_feature_distributions(data, config)
+        plot_class_distribution(data, config)
+        plot_correlation_matrix(data, config)
+
+        logger.info("Fase 1 completata.")
+    else:
+        # Carica comunque i dati se servono per le fasi successive
+        data = load_and_preprocess(config)
+
+    # ================================================================
+    # FASE 2: Baseline a tagli fisici
+    # ================================================================
+    if should_run(2, args):
+        baseline_results = run_baseline(data, config)
+        if baseline_results:
+            all_results["Cuts-Based PID"] = baseline_results
+
+    # ================================================================
+    # FASE 3: Modelli di ML classici
+    # ================================================================
+    if should_run(3, args):
+        classical_results = train_and_evaluate(data, config)
+        all_results.update(classical_results)
+        plot_feature_importance(classical_results, data["feature_names"], config)
+
+    # ================================================================
+    # FASE 4: Deep Learning (MLP)
+    # ================================================================
+    mlp_results = {}
+    if should_run(4, args):
+        mlp_results = train_mlp(data, config)
+        all_results["MLP (PyTorch)"] = mlp_results
+        plot_training_history(mlp_results["history"], config)
+
+    # ================================================================
+    # FASE 5: Interpretabilita' e Uncertainty
+    # ================================================================
+    if should_run(5, args):
+        # 5a: SHAP
+        run_shap_analysis(all_results, data, config)
+
+        # 5b: Uncertainty (MC Dropout) - solo se MLP e' stato addestrato
+        if mlp_results:
+            run_uncertainty_analysis(mlp_results, data, config)
+        elif "MLP (PyTorch)" in all_results:
+            run_uncertainty_analysis(all_results["MLP (PyTorch)"], data, config)
+
+    # ================================================================
+    # FASE 6: Valutazione finale e confronto
+    # ================================================================
+    if should_run(6, args) and all_results:
+        comparison = generate_full_report(all_results, data, config)
+        logger.info(f"\n{'=' * 50}")
+        logger.info("RISULTATI FINALI")
+        logger.info(f"{'=' * 50}")
+        logger.info(f"\n{comparison.to_string(index=False)}")
+
+    # ================================================================
+    elapsed = time.time() - t_start
+    logger.info(f"\nPipeline completata in {elapsed:.1f} secondi.")
+    logger.info(f"Output salvati in: {config['paths']['output_dir']}/")
+
+
+if __name__ == "__main__":
+    main()

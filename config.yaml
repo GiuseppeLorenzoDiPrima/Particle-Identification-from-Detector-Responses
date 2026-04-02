@@ -1,0 +1,88 @@
+# ============================================================================
+# Particle Identification from Detector Responses - Configurazione Progetto
+# ============================================================================
+
+# --- Percorsi ---
+paths:
+  data_dir: "data"
+  output_dir: "outputs"
+  figures_dir: "outputs/figures"
+  models_dir: "outputs/models"
+  results_dir: "outputs/results"
+
+# --- Dataset Kaggle ---
+dataset:
+  kaggle_slug: "naharrison/particle-identification-from-detector-responses"
+  filename: "pid-5M.csv"          # nome del CSV dentro l'archivio
+  test_size: 0.2
+  val_size: 0.1                   # sottratto dal train
+  random_state: 42
+  max_samples: null               # null = usa tutto; intero = subsample
+
+# --- Nomi delle feature e target ---
+features:
+  # Le 6 risposte dei rivelatori + momento
+  names:
+    - "p"           # momento della particella (GeV/c)
+    - "theta"       # angolo polare (rad)
+    - "beta"        # velocita' relativistica (v/c)
+    - "nphe"        # numero di fotoelettroni (Cherenkov)
+    - "ein"         # energia depositata inner calorimeter
+    - "eout"        # energia depositata outer calorimeter
+  target: "id"      # colonna target (tipo di particella)
+
+# --- Baseline a tagli (cuts-based PID) ---
+baseline_cuts:
+  # Soglie manuali sul piano dE/dx vs p (da affinare dopo visualizzazione)
+  enabled: true
+
+# --- Modelli classici di ML ---
+classical_models:
+  logistic_regression:
+    max_iter: 1000
+    multi_class: "multinomial"
+  knn:
+    n_neighbors: 7
+  decision_tree:
+    max_depth: 10
+  random_forest:
+    n_estimators: 200
+    max_depth: 15
+    n_jobs: -1
+  xgboost:
+    n_estimators: 300
+    max_depth: 6
+    learning_rate: 0.1
+    n_jobs: -1
+
+# --- Cross-validation ---
+cross_validation:
+  n_folds: 5
+  stratified: true
+
+# --- Deep Learning (MLP) ---
+deep_learning:
+  hidden_layers: [128, 64, 32]
+  dropout: 0.3
+  learning_rate: 0.001
+  batch_size: 512
+  epochs: 50
+  early_stopping_patience: 7
+  weight_decay: 0.0001
+
+# --- Interpretabilita' (SHAP) ---
+interpretability:
+  shap_samples: 1000            # campioni per calcolo SHAP values
+  enabled: true
+
+# --- Uncertainty Quantification ---
+uncertainty:
+  mc_dropout_iterations: 50     # numero di forward pass per MC Dropout
+  enabled: true
+
+# --- Visualizzazione ---
+visualization:
+  dpi: 150
+  figsize: [10, 7]
+  style: "seaborn-v0_8-whitegrid"
+  palette: "Set2"
