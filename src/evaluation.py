@@ -9,6 +9,7 @@ Produce:
 
 import logging
 import os
+import re
 
 import numpy as np
 import pandas as pd
@@ -371,6 +372,21 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
         # Plotly interattivo 3D (rotazione mouse/zoom) con ellissoidi per classe
         html_filename = os.path.join(hypercube_dir, f"hypercube_separability_{_safe_name(name)}.html")
 
+        # CSS condiviso per HTML (no inline)
+        css_name = f"hypercube_separability_{_safe_name(name)}.css"
+        css_path = os.path.join(hypercube_dir, css_name)
+        if not os.path.exists(css_path):
+            with open(css_path, "w", encoding="utf-8") as css:
+                css.write("body { font-family: Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }")
+                css.write("\n")
+                css.write("h1 { color: #333; font-size: 1.4rem; }")
+                css.write("\n")
+                css.write(".msg { margin: 16px 0; color: #333; }")
+                css.write("\n")
+                css.write("img.hypercube_img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }")
+                css.write("\n")
+                css.write(".plotly-wrapper { width: 100%; height: 100%; overflow: auto; }")
+
         if go is not None:
             figly = go.Figure()
             palette = ["red", "blue", "green", "purple", "orange", "cyan", "magenta", "brown"]
@@ -408,41 +424,44 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
                 title=f"Ipercube 3D Interattivo: {_safe_name(name)}",
                 legend=dict(font=dict(size=10)),
             )
-            html_text = figly.to_html(full_html=True, include_plotlyjs='cdn')
-            # Aggiusta attributi HTML per accessibilità e viewport
-            html_text = html_text.replace("<html>", "<html lang=\"it\">", 1)
-            if "viewport" not in html_text:
-                html_text = html_text.replace("<head>", "<head>\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n", 1)
-            with open(html_filename, "w", encoding="utf-8") as f:
-                f.write(html_text)
+
+            plotly_div = figly.to_html(full_html=False, include_plotlyjs='cdn')
+            with open(html_filename, 'w', encoding='utf-8') as f:
+                f.write('<!DOCTYPE html>\n')
+                f.write('<html lang="it">\n')
+                f.write('<head>\n')
+                f.write('  <meta charset="utf-8" />\n')
+                f.write('  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n')
+                f.write(f'  <title>Ipercube 3D Interattivo - {_safe_name(name)}</title>\n')
+                f.write(f'  <link rel="stylesheet" href="{css_name}" />\n')
+                f.write('</head>\n')
+                f.write('<body>\n')
+                f.write('<h1>Ipercube 3D Interattivo</h1>\n')
+                f.write('<div class="plotly-wrapper">\n')
+                f.write(plotly_div)
+                f.write('</div>\n')
+                f.write('</body>\n')
+                f.write('</html>\n')
             logger.info(f"Salvato interattivo plotly: {html_filename}")
         else:
-            # scrive un HTML con image statico, suggerisce installazione
             img_name = os.path.basename(filename)
-            css_name = "hypercube_separability.css"
-            css_path = os.path.join(hypercube_dir, css_name)
-            if not os.path.exists(css_path):
-                with open(css_path, "w", encoding="utf-8") as css:
-                    css.write("body { font-family: Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }\n")
-                    css.write("img.hypercube_img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }\n")
-                    css.write(".msg { margin: 16px 0; color: #333; }\n")
-
-            with open(html_filename, "w", encoding="utf-8") as f:
-                f.write("<!DOCTYPE html>\n")
-                f.write("<html lang='it'>\n")
-                f.write("<head>\n")
-                f.write("  <meta charset='UTF-8'>\n")
-                f.write("  <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n")
-                f.write("  <title>Hypercube Separabilita</title>\n")
-                f.write(f"  <link rel='stylesheet' href='{css_name}'>\n")
-                f.write("</head>\n")
-                f.write("<body>\n")
-                f.write("<h1>Ipercube 3D (solo immagine)</h1>\n")
-                f.write("<p class='msg'>Installare plotly per la versione interattiva: python -m pip install plotly</p>\n")
-                f.write(f"<img class='hypercube_img' src='{img_name}' alt='hypercube' />\n")
-                f.write("</body>\n")
-                f.write("</html>")
+            with open(html_filename, 'w', encoding='utf-8') as f:
+                f.write('<!DOCTYPE html>\n')
+                f.write('<html lang="it">\n')
+                f.write('<head>\n')
+                f.write('  <meta charset="utf-8" />\n')
+                f.write('  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n')
+                f.write(f'  <title>Ipercube 3D - {_safe_name(name)}</title>\n')
+                f.write(f'  <link rel="stylesheet" href="{css_name}" />\n')
+                f.write('</head>\n')
+                f.write('<body>\n')
+                f.write('<h1>Ipercube 3D (solo immagine)</h1>\n')
+                f.write('<p class="msg">Installare plotly per la versione interattiva: python -m pip install plotly</p>\n')
+                f.write(f'<img class="hypercube_img" src="{img_name}" alt="hypercube" />\n')
+                f.write('</body>\n')
+                f.write('</html>\n')
             logger.info(f"Plotly non disponibile. Creato fallback HTML statico: {html_filename}")
+
 
 
         report_lines.append(
