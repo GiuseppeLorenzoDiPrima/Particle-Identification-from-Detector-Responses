@@ -110,7 +110,7 @@ def train_mlp(data: dict, config: dict) -> dict:
     class_weights = 1.0 / class_counts
     class_weights = class_weights / class_weights.sum() * len(class_weights)
     class_weights_tensor = torch.FloatTensor(class_weights).to(device)
-    logger.info(f"Class weights: {dict(zip(range(n_classes), class_weights.round(4)))}")
+    logger.info(f"Class weights: {dict(zip(range(n_classes), map(float, class_weights.round(4))))}")
     criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
 
     # DataLoader

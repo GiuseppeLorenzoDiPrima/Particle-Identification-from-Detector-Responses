@@ -123,7 +123,7 @@ def main():
     # Quick mode: limita i campioni
     if args.quick:
         config["dataset"]["max_samples"] = 100_000
-        config["deep_learning"]["epochs"] = 15
+        config["deep_learning"]["epochs"] = 20
         config["interpretability"]["shap_samples"] = 200
         config["uncertainty"]["mc_dropout_iterations"] = 20
 

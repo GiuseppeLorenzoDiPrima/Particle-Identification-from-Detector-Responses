@@ -125,9 +125,19 @@ def load_and_preprocess(config: dict) -> dict:
     # Identifica feature e target
     target_col = config["features"]["target"]
     feature_names = [c for c in df.columns if c != target_col]
+    
+    # Mappa PDG ID → nome particella
+    df[target_col] = df[target_col].map(PARTICLE_NAMES)
+    # Controllo sicurezza
+    if df[target_col].isnull().any():
+        missing = df[df[target_col].isnull()]
+        raise ValueError(f"Valori PDG non mappati trovati:\n{missing}")
     logger.info(f"Feature: {feature_names}")
     logger.info(f"Target: {target_col}")
-    logger.info(f"Distribuzione classi:\n{df[target_col].value_counts().sort_index()}")
+    class_counts = df[target_col].value_counts().sort_index()
+    logger.info("Distribuzione classi:")
+    for cls, count in class_counts.items():
+        logger.info(f"  {cls.capitalize():10s}: {count}")
 
     X = df[feature_names].values
     y_raw = df[target_col].values
@@ -135,7 +145,9 @@ def load_and_preprocess(config: dict) -> dict:
     # Label encoding
     le = LabelEncoder()
     y = le.fit_transform(y_raw)
-    logger.info(f"Classi codificate: {dict(zip(le.classes_, le.transform(le.classes_)))}")
+    
+    class_mapping = {cls.capitalize(): int(idx) for cls, idx in zip(le.classes_, le.transform(le.classes_))}
+    logger.info(f"Classi codificate: {class_mapping}")
 
     # Split: train+val / test
     rs = config["dataset"]["random_state"]
