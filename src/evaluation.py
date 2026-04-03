@@ -44,6 +44,9 @@ def evaluate_model(y_true, y_pred, y_proba=None, n_classes=4) -> dict:
         "f1_macro": f1_score(y_true, y_pred, average="macro"),
         "precision_macro": precision_score(y_true, y_pred, average="macro"),
         "recall_macro": recall_score(y_true, y_pred, average="macro"),
+        "f1_weighted": f1_score(y_true, y_pred, average="weighted"),
+        "precision_weighted": precision_score(y_true, y_pred, average="weighted"),
+        "recall_weighted": recall_score(y_true, y_pred, average="weighted"),
     }
 
     if y_proba is not None:
@@ -51,6 +54,9 @@ def evaluate_model(y_true, y_pred, y_proba=None, n_classes=4) -> dict:
         try:
             metrics["auc_roc_macro"] = roc_auc_score(
                 y_bin, y_proba, multi_class="ovr", average="macro"
+            )
+            metrics["auc_roc_weighted"] = roc_auc_score(
+                y_bin, y_proba, multi_class="ovr", average="weighted"
             )
             # AUC per singola classe
             for i in range(n_classes):
@@ -96,7 +102,8 @@ def build_comparison_table(all_results: dict, data: dict) -> pd.DataFrame:
 
     # Riordina colonne
     col_order = ["Modello", "accuracy", "f1_macro", "precision_macro",
-                 "recall_macro", "auc_roc_macro", "CV Accuracy", "Train Time (s)"]
+                 "recall_macro", "f1_weighted", "precision_weighted", "recall_weighted",
+                 "auc_roc_macro", "auc_roc_weighted", "CV Accuracy", "Train Time (s)"]
     existing = [c for c in col_order if c in df.columns]
     other = [c for c in df.columns if c not in col_order]
     df = df[existing + other]
@@ -125,6 +132,14 @@ def generate_full_report(all_results: dict, data: dict, config: dict):
     table_path = os.path.join(results_dir, "model_comparison.csv")
     comparison.to_csv(table_path, index=False)
     logger.info(f"Tabella salvata in {table_path}")
+
+    # --- Model comparison report in formato text ---
+    summary_path = os.path.join(results_dir, "report_model_comparison.txt")
+    with open(summary_path, "w") as f:
+        f.write("Model Comparison\n")
+        f.write("=" * 50 + "\n")
+        f.write(comparison.to_string(index=False))
+    logger.info(f"Model comparison report salvato in {summary_path}")
 
     # --- Classification report per ogni modello ---
     for name, res in all_results.items():
