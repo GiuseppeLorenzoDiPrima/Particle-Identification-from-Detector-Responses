@@ -106,7 +106,8 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
 
     n_iter = config["uncertainty"]["mc_dropout_iterations"]
     fig_dir = config["paths"]["figures_dir"]
-    os.makedirs(fig_dir, exist_ok=True)
+    uncertainty_dir = os.path.join(fig_dir, "uncertainty")
+    os.makedirs(uncertainty_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
     labels = get_particle_labels(data["label_encoder"])
 
@@ -127,7 +128,7 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
     ax.set_title("Distribuzione incertezza: predizioni corrette vs errate")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, "uncertainty_entropy.png"))
+    fig.savefig(os.path.join(uncertainty_dir, "uncertainty_entropy.png"))
     plt.close(fig)
     logger.info("  Salvato uncertainty_entropy.png")
 
@@ -151,18 +152,18 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
                label=f"Accuracy senza filtro: {(y_pred == y_test).mean():.4f}")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, "rejection_curve.png"))
+    fig.savefig(os.path.join(uncertainty_dir, "rejection_curve.png"))
     plt.close(fig)
     logger.info("  Salvato rejection_curve.png")
 
     # --- 3. Incertezza per classe ---
     fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
     class_entropies = [entropy[y_test == c] for c in range(len(labels))]
-    ax.boxplot(class_entropies, labels=labels)
+    ax.boxplot(class_entropies, labels=labels) # type: ignore
     ax.set_ylabel("Entropia predittiva")
     ax.set_title("Distribuzione incertezza per tipo di particella")
     fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, "uncertainty_per_class.png"))
+    fig.savefig(os.path.join(uncertainty_dir, "uncertainty_per_class.png"))
     plt.close(fig)
     logger.info("  Salvato uncertainty_per_class.png")
 
@@ -198,7 +199,7 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
     ax2.set_title("Mappa di incertezza nel piano p vs energia")
 
     fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, "uncertainty_scatter.png"))
+    fig.savefig(os.path.join(uncertainty_dir, "uncertainty_scatter.png"))
     plt.close(fig)
     logger.info("  Salvato uncertainty_scatter.png")
 

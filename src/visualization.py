@@ -50,7 +50,9 @@ def plot_bethe_bloch(data: dict, config: dict):
     Cerca le colonne piu' pertinenti tra le feature disponibili.
     """
     setup_style(config)
-    fig_dir = config["paths"]["figures_dir"]
+    fig_path = config["paths"]["figures_dir"]
+    os.makedirs(fig_path, exist_ok=True)
+    fig_dir = fig_path + "/pre-processing"
     os.makedirs(fig_dir, exist_ok=True)
 
     feature_names = data["feature_names"]
@@ -100,7 +102,9 @@ def plot_bethe_bloch(data: dict, config: dict):
 def plot_feature_distributions(data: dict, config: dict):
     """Distribuzione di ogni feature, separata per classe di particella."""
     setup_style(config)
-    fig_dir = config["paths"]["figures_dir"]
+    fig_path = config["paths"]["figures_dir"]
+    os.makedirs(fig_path, exist_ok=True)
+    fig_dir = fig_path + "/pre-processing"
     os.makedirs(fig_dir, exist_ok=True)
 
     feature_names = data["feature_names"]
@@ -141,7 +145,9 @@ def plot_feature_distributions(data: dict, config: dict):
 def plot_class_distribution(data: dict, config: dict):
     """Grafico a barre della distribuzione delle classi."""
     setup_style(config)
-    fig_dir = config["paths"]["figures_dir"]
+    fig_path = config["paths"]["figures_dir"]
+    os.makedirs(fig_path, exist_ok=True)
+    fig_dir = fig_path + "/pre-processing"
     os.makedirs(fig_dir, exist_ok=True)
 
     y = data["y_train"]
@@ -170,7 +176,9 @@ def plot_class_distribution(data: dict, config: dict):
 def plot_correlation_matrix(data: dict, config: dict):
     """Matrice di correlazione tra le feature."""
     setup_style(config)
-    fig_dir = config["paths"]["figures_dir"]
+    fig_path = config["paths"]["figures_dir"]
+    os.makedirs(fig_path, exist_ok=True)
+    fig_dir = fig_path + "/pre-processing"
     os.makedirs(fig_dir, exist_ok=True)
 
     feature_names = data["feature_names"]
@@ -190,10 +198,11 @@ def plot_correlation_matrix(data: dict, config: dict):
 
 
 def plot_confusion_matrix(y_true, y_pred, labels: list[str], title: str,
-                          config: dict, filename: str):
+                          config: dict, filename: str, subdir: str = "confusion_matrix"):
     """Salva la matrice di confusione come immagine."""
     fig_dir = config["paths"]["figures_dir"]
-    os.makedirs(fig_dir, exist_ok=True)
+    subdir_dir = os.path.join(fig_dir, subdir)
+    os.makedirs(subdir_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
 
     cm = confusion_matrix(y_true, y_pred)
@@ -202,19 +211,20 @@ def plot_confusion_matrix(y_true, y_pred, labels: list[str], title: str,
     disp.plot(ax=ax, cmap="Blues", values_format="d")
     ax.set_title(title, fontsize=13)
     fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, filename))
+    fig.savefig(os.path.join(subdir_dir, filename))
     plt.close(fig)
-    logger.info(f"Salvato {filename}")
+    logger.info(f"Salvato {filename} in {subdir_dir}")
 
 
 def plot_roc_curves(y_true, y_score, labels: list[str], title: str,
-                    config: dict, filename: str):
+                    config: dict, filename: str, subdir: str = "roc"):
     """
     Curve ROC one-vs-rest per classificazione multiclasse.
     y_score: matrice (n_samples, n_classes) di probabilita'.
     """
     fig_dir = config["paths"]["figures_dir"]
-    os.makedirs(fig_dir, exist_ok=True)
+    subdir_dir = os.path.join(fig_dir, subdir)
+    os.makedirs(subdir_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
 
     n_classes = len(labels)
@@ -222,7 +232,7 @@ def plot_roc_curves(y_true, y_score, labels: list[str], title: str,
 
     fig, ax = plt.subplots(figsize=(8, 6), dpi=dpi)
     for i in range(n_classes):
-        fpr, tpr, _ = roc_curve(y_bin[:, i], y_score[:, i])
+        fpr, tpr, _ = roc_curve(y_bin[:, i], y_score[:, i]) # type: ignore
         roc_auc = auc(fpr, tpr)
         ax.plot(fpr, tpr, lw=2, label=f"{labels[i]} (AUC = {roc_auc:.3f})")
 
@@ -232,9 +242,9 @@ def plot_roc_curves(y_true, y_score, labels: list[str], title: str,
     ax.set_title(title, fontsize=13)
     ax.legend(fontsize=10)
     fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, filename))
+    fig.savefig(os.path.join(subdir_dir, filename))
     plt.close(fig)
-    logger.info(f"Salvato {filename}")
+    logger.info(f"Salvato {filename} in {subdir_dir}")
 
 
 def _find_feature_index(feature_names: list[str], candidates: list[str]):

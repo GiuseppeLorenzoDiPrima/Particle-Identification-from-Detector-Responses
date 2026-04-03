@@ -20,6 +20,7 @@ shap>=0.43
 # --- Visualizzazione ---
 matplotlib>=3.7
 seaborn>=0.13
+plotly>=5.15
 
 # --- Configurazione ---
 pyyaml>=6.0

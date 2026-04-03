@@ -50,15 +50,15 @@ def setup_logging(config: dict):
     File:    registra tutto (incluso shap, matplotlib, ecc.)
              con timestamp completo.
     """
-    results_dir = config["paths"]["results_dir"]
-    os.makedirs(results_dir, exist_ok=True)
+    log_dir = config["paths"]["log_dir"]
+    os.makedirs(log_dir, exist_ok=True)
 
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
 
     # --- File handler: tutto, verbose ---
     file_handler = logging.FileHandler(
-        os.path.join(results_dir, "run.log"), mode="w", encoding="utf-8"
+        os.path.join(log_dir, "run.log"), mode="w", encoding="utf-8"
     )
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(logging.Formatter(

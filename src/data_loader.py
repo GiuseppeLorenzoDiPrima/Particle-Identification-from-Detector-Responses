@@ -146,7 +146,7 @@ def load_and_preprocess(config: dict) -> dict:
     le = LabelEncoder()
     y = le.fit_transform(y_raw)
     
-    class_mapping = {cls.capitalize(): int(idx) for cls, idx in zip(le.classes_, le.transform(le.classes_))}
+    class_mapping = {cls.capitalize(): int(idx) for cls, idx in zip(le.classes_, le.transform(le.classes_))} # type: ignore
     logger.info(f"Classi codificate: {class_mapping}")
 
     # Split: train+val / test

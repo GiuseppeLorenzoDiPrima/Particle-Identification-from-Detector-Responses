@@ -22,7 +22,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.metrics import accuracy_score
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +173,9 @@ def plot_feature_importance(results: dict, feature_names: list, config: dict):
     import matplotlib.pyplot as plt
     import os
 
-    fig_dir = config["paths"]["figures_dir"]
+    fig_path = config["paths"]["figures_dir"]
+    os.makedirs(fig_path, exist_ok=True)
+    fig_dir = fig_path + "/training"
     os.makedirs(fig_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
 

@@ -85,7 +85,7 @@ def train_mlp(data: dict, config: dict) -> dict:
     logger.info(f"Device: {device}")
 
     n_features = data["X_train"].shape[1]
-    n_classes = len(np.unique(data["y_train"]))
+    n_classes = len(np.unique(data["y_train"])) # type: ignore
 
     # Modello
     model = ParticleMLP(
@@ -222,7 +222,9 @@ def plot_training_history(history: dict, config: dict):
     """Grafico loss e accuracy durante il training."""
     import matplotlib.pyplot as plt
 
-    fig_dir = config["paths"]["figures_dir"]
+    fig_path = config["paths"]["figures_dir"]
+    os.makedirs(fig_path, exist_ok=True)
+    fig_dir = fig_path + "/training"
     os.makedirs(fig_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
 

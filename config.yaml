@@ -9,6 +9,7 @@ paths:
   figures_dir: "outputs/figures"
   models_dir: "outputs/models"
   results_dir: "outputs/results"
+  log_dir: "outputs/logs"
 
 # --- Dataset Kaggle ---
 dataset:
@@ -62,7 +63,7 @@ cross_validation:
 
 # --- Deep Learning (MLP) ---
 deep_learning:
-  hidden_layers: [128, 256, 512, 512, 256, 128]  # architettura MLP
+  hidden_layers: [64, 128, 256, 64]  # architettura MLP
   dropout: 0.3
   learning_rate: 0.001
   batch_size: 512
@@ -82,7 +83,7 @@ uncertainty:
 
 # --- Visualizzazione ---
 visualization:
-  dpi: 300
+  dpi: 500
   figsize: [10, 7]
   style: "seaborn-v0_8-whitegrid"
   palette: "Set2"

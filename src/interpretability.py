@@ -10,7 +10,7 @@ import logging
 import os
 
 import numpy as np
-import shap
+import shap # type: ignore
 import matplotlib.pyplot as plt
 
 from src.visualization import get_particle_labels
@@ -57,7 +57,8 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
     logger.info("=" * 50)
 
     fig_dir = config["paths"]["figures_dir"]
-    os.makedirs(fig_dir, exist_ok=True)
+    shap_dir = os.path.join(fig_dir, "shap")
+    os.makedirs(shap_dir, exist_ok=True)
     n_samples = config["interpretability"]["shap_samples"]
     feature_names = data["feature_names"]
     labels = get_particle_labels(data["label_encoder"])
@@ -82,7 +83,7 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
             explainer = shap.TreeExplainer(model)
             raw_sv = explainer.shap_values(X_sample)
             sv_list = _to_list_format(raw_sv, n_classes)
-            _plot_shap_all(sv_list, X_sample, feature_names, labels, name, fig_dir, dpi)
+            _plot_shap_all(sv_list, X_sample, feature_names, labels, name, shap_dir, dpi)
         except Exception as e:
             logger.warning(f"    SHAP fallito per {name}: {e}")
 
@@ -110,7 +111,7 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
             explainer = shap.KernelExplainer(mlp_predict, background)
             raw_sv = explainer.shap_values(X_shap)
             sv_list = _to_list_format(raw_sv, n_classes)
-            _plot_shap_all(sv_list, X_shap, feature_names, labels, "MLP", fig_dir, dpi)
+            _plot_shap_all(sv_list, X_shap, feature_names, labels, "MLP", shap_dir, dpi)
         except Exception as e:
             logger.warning(f"    SHAP fallito per MLP: {e}")
 
