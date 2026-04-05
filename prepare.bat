@@ -23,7 +23,7 @@ if not exist ".venv" (
 
 REM --- Attivazione ---
 echo [2/3] Attivazione venv...
-call .venv\Scripts\activate.bat
+.venv\Scripts\activate.bat
 
 REM --- Installazione dipendenze ---
 echo [3/3] Installazione dipendenze da requirements.txt...
