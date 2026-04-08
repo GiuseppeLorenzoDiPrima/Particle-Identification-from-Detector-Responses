@@ -11,7 +11,7 @@ echo.
 REM --- Creazione virtual environment ---
 if not exist ".venv" (
     echo [1/3] Creazione virtual environment...
-    call python -m venv .venv
+    python -m venv .venv
     if errorlevel 1 (
         echo ERRORE: impossibile creare il venv. Assicurati che Python sia installato.
         pause
@@ -23,12 +23,13 @@ if not exist ".venv" (
 
 REM --- Attivazione ---
 echo [2/3] Attivazione venv...
-.venv\Scripts\activate.bat
+.venv\Scripts\Activate.ps1 
 
 REM --- Installazione dipendenze ---
 echo [3/3] Installazione dipendenze da requirements.txt...
 python.exe -m pip install --upgrade pip
 pip install -r requirements.txt
+pip3 install --upgrade --force-reinstall torch torchaudio --index-url https://download.pytorch.org/whl/cu128  
 
 echo.
 echo ===================================
