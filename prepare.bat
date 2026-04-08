@@ -11,7 +11,7 @@ echo.
 REM --- Creazione virtual environment ---
 if not exist ".venv" (
     echo [1/3] Creazione virtual environment...
-    python -m venv .venv
+    call python -m venv .venv
     if errorlevel 1 (
         echo ERRORE: impossibile creare il venv. Assicurati che Python sia installato.
         pause
