@@ -2,8 +2,10 @@
 Modulo per il download, caricamento e preprocessing del dataset
 Particle Identification from Detector Responses.
 
-Il dataset contiene risposte di 6 rivelatori per 4 specie di particelle
-prodotte in scattering inelastico elettrone-protone.
+Il dataset è disponibile su Kaggle: https://www.kaggle.com/datasets/naharrison/particle-identification-from-detector-responses
+
+Il dataset contiene risposte simulate di 6 rivelatori per 4 specie di particelle
+(Elettroni, Kaoni, Pioni e Protoni) prodotte in scattering inelastico elettrone-protone.
 """
 
 import os
@@ -29,6 +31,16 @@ PARTICLE_NAMES = {
     2212: "protone",
 }
 
+# Mappa i nomi delle feature: nome -> simbolo per visualizzazione nel terminale
+FEATURE_NAMES = {
+    "p": "p",
+    "theta": "θ",
+    "beta": "β",
+    "nphe": "nₚₕₑ",
+    "ein": "Eᵢₙ",
+    "eout": "Eₒᵤₜ"
+}
+
 
 def load_config(config_path: str = "config.yaml") -> dict:
     """Carica la configurazione dal file YAML."""
@@ -50,7 +62,7 @@ def download_dataset(config: dict) -> str:
     csv_path = os.path.join(data_dir, csv_name)
 
     if os.path.exists(csv_path):
-        logger.info(f"Dataset gia' presente in {csv_path}, skip download.")
+        logger.info(f"Dataset già presente in {csv_path}, skip download.")
         return csv_path
 
     os.makedirs(data_dir, exist_ok=True)
@@ -103,10 +115,12 @@ def load_and_preprocess(config: dict) -> dict:
     """
     csv_path = download_dataset(config)
     logger.info(f"Caricamento dataset da {csv_path}...")
+    print()
 
     df = pd.read_csv(csv_path)
     logger.info(f"Dataset caricato: {df.shape[0]} eventi, {df.shape[1]} colonne")
     logger.info(f"Colonne: {list(df.columns)}")
+    print()
 
     # Subsample opzionale
     max_samples = config["dataset"].get("max_samples")
@@ -115,6 +129,7 @@ def load_and_preprocess(config: dict) -> dict:
         df = df.sample(n=max_samples, random_state=config["dataset"]["random_state"])
         df = df.reset_index(drop=True)
 
+    logger.info("Dataset pre-processing...")
     # Rimuovi righe con valori mancanti
     n_before = len(df)
     df = df.dropna().reset_index(drop=True)
@@ -125,15 +140,16 @@ def load_and_preprocess(config: dict) -> dict:
     # Identifica feature e target
     target_col = config["features"]["target"]
     feature_names = [c for c in df.columns if c != target_col]
-    
+    feature_for_print = [FEATURE_NAMES.get(f, f) for f in feature_names]
     # Mappa PDG ID → nome particella
     df[target_col] = df[target_col].map(PARTICLE_NAMES)
     # Controllo sicurezza
     if df[target_col].isnull().any():
         missing = df[df[target_col].isnull()]
         raise ValueError(f"Valori PDG non mappati trovati:\n{missing}")
-    logger.info(f"Feature: {feature_names}")
-    logger.info(f"Target: {target_col}")
+    logger.info(f"  Feature: {feature_names}")
+    logger.info(f"  Label: {target_col}")
+    print()
     class_counts = df[target_col].value_counts().sort_index()
     logger.info("Distribuzione classi:")
     for cls, count in class_counts.items():
@@ -147,7 +163,9 @@ def load_and_preprocess(config: dict) -> dict:
     y = le.fit_transform(y_raw)
     
     class_mapping = {cls.capitalize(): int(idx) for cls, idx in zip(le.classes_, le.transform(le.classes_))} # type: ignore
+    print()
     logger.info(f"Classi codificate: {class_mapping}")
+    class_names_print = [f"{cls.capitalize()}" for cls, _ in class_mapping.items()]
 
     # Split: train+val / test
     rs = config["dataset"]["random_state"]
@@ -159,10 +177,9 @@ def load_and_preprocess(config: dict) -> dict:
     )
 
     # Split: train / val
-    val_fraction = val_size / (1 - test_size)
     X_train, X_val, y_train, y_val = train_test_split(
         X_trainval, y_trainval,
-        test_size=val_fraction, random_state=rs, stratify=y_trainval
+        test_size=val_size, random_state=rs, stratify=y_trainval
     )
 
     logger.info(
@@ -191,7 +208,9 @@ def load_and_preprocess(config: dict) -> dict:
         "X_val_raw": X_val_raw,
         "X_test_raw": X_test_raw,
         "feature_names": feature_names,
+        "feature_for_print": feature_for_print,
         "label_encoder": le,
         "scaler": scaler,
         "df": df,
+        "class_names": class_names_print,
     }

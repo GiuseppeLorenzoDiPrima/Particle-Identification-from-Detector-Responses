@@ -22,6 +22,15 @@ from src.data_loader import PARTICLE_NAMES
 
 logger = logging.getLogger(__name__)
 
+# Mappa i nomi delle feature: nome -> simbolo per visualizzazione matplotlib
+FEATURE_NAMES = {
+    "p": r"$p$",
+    "theta": r"$\theta$",
+    "beta": r"$\beta$",
+    "nphe": r"$n_{phe}$",
+    "ein": r"$E_{in}$",
+    "eout": r"$E_{out}$"
+}
 
 def setup_style(config: dict):
     """Imposta lo stile dei grafici dalla configurazione."""
@@ -44,7 +53,7 @@ def get_particle_labels(label_encoder) -> list[str]:
 
 def plot_bethe_bloch(data: dict, config: dict):
     """
-    Plot 2D dE/dx vs momento p, colorato per tipo di particella.
+    Plot 2D dE/dx vs quantità di moto p, colorato per tipo di particella.
     Questo e' il diagramma fondamentale per la PID in fisica sperimentale.
 
     Cerca le colonne piu' pertinenti tra le feature disponibili.
@@ -60,7 +69,7 @@ def plot_bethe_bloch(data: dict, config: dict):
     y = data["y_train"]
     labels = get_particle_labels(data["label_encoder"])
 
-    # Identifica la colonna del momento (p) e una proxy per dE/dx
+    # Identifica la colonna della quantità di moto (p) e una proxy per dE/dx
     p_idx = _find_feature_index(feature_names, ["p", "momentum"])
     dedx_candidates = ["ein", "eout", "edep", "dedx", "de_dx", "energy"]
     dedx_idx = _find_feature_index(feature_names, dedx_candidates)
@@ -86,17 +95,18 @@ def plot_bethe_bloch(data: dict, config: dict):
             X_raw[idx[mask], p_idx],
             X_raw[idx[mask], dedx_idx],
             s=2, alpha=0.3,
-            label=labels[class_id],
+            label=labels[class_id].capitalize(),
         )
 
-    ax.set_xlabel(f"{feature_names[p_idx]} (momento)", fontsize=12)
+    feature_names = list(map(FEATURE_NAMES.get, feature_names))
+    ax.set_xlabel(f"{feature_names[p_idx]} (quantità di moto)", fontsize=12)
     ax.set_ylabel(f"{feature_names[dedx_idx]} (energia depositata)", fontsize=12)
-    ax.set_title("Diagramma Bethe-Bloch: energia depositata vs momento", fontsize=14)
+    ax.set_title("Diagramma Bethe-Bloch: energia depositata vs quantità di moto", fontsize=14)
     ax.legend(markerscale=5, fontsize=11)
     fig.tight_layout()
     fig.savefig(os.path.join(fig_dir, "bethe_bloch.png"))
     plt.close(fig)
-    logger.info("Salvato bethe_bloch.png")
+    logger.info("  Salvato bethe_bloch.png")
 
 
 def plot_feature_distributions(data: dict, config: dict):
@@ -107,7 +117,7 @@ def plot_feature_distributions(data: dict, config: dict):
     fig_dir = fig_path + "/pre-processing"
     os.makedirs(fig_dir, exist_ok=True)
 
-    feature_names = data["feature_names"]
+    feature_names = list(map(FEATURE_NAMES.get, data["feature_names"])) if data.get("feature_names") else []
     X_raw = data["X_train_raw"]
     y = data["y_train"]
     labels = get_particle_labels(data["label_encoder"])
@@ -126,7 +136,7 @@ def plot_feature_distributions(data: dict, config: dict):
             mask = y == class_id
             ax.hist(
                 X_raw[mask, i], bins=80, alpha=0.5,
-                label=labels[class_id], density=True,
+                label=labels[class_id].capitalize(), density=True,
             )
         ax.set_title(fname, fontsize=11)
         ax.legend(fontsize=8)
@@ -139,7 +149,7 @@ def plot_feature_distributions(data: dict, config: dict):
     fig.tight_layout()
     fig.savefig(os.path.join(fig_dir, "feature_distributions.png"), bbox_inches="tight")
     plt.close(fig)
-    logger.info("Salvato feature_distributions.png")
+    logger.info("  Salvato feature_distributions.png")
 
 
 def plot_class_distribution(data: dict, config: dict):
@@ -157,8 +167,9 @@ def plot_class_distribution(data: dict, config: dict):
     unique, counts = np.unique(y, return_counts=True)
 
     fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
-    bars = ax.bar([labels[u] for u in unique], counts, color=sns.color_palette())
-    ax.set_ylabel("Numero di eventi")
+    class_labels = [labels[u].capitalize() for u in unique]
+    bars = ax.bar(class_labels, counts, color=sns.color_palette())
+    ax.set_ylabel("Numero di samples")
     ax.set_title("Distribuzione classi nel training set")
 
     for bar, count in zip(bars, counts):
@@ -170,7 +181,7 @@ def plot_class_distribution(data: dict, config: dict):
     fig.tight_layout()
     fig.savefig(os.path.join(fig_dir, "class_distribution.png"))
     plt.close(fig)
-    logger.info("Salvato class_distribution.png")
+    logger.info("  Salvato class_distribution.png")
 
 
 def plot_correlation_matrix(data: dict, config: dict):
@@ -181,7 +192,7 @@ def plot_correlation_matrix(data: dict, config: dict):
     fig_dir = fig_path + "/pre-processing"
     os.makedirs(fig_dir, exist_ok=True)
 
-    feature_names = data["feature_names"]
+    feature_names = list(map(FEATURE_NAMES.get, data["feature_names"]))
     X_raw = data["X_train_raw"]
     dpi = config["visualization"]["dpi"]
 
@@ -194,7 +205,7 @@ def plot_correlation_matrix(data: dict, config: dict):
     fig.tight_layout()
     fig.savefig(os.path.join(fig_dir, "correlation_matrix.png"))
     plt.close(fig)
-    logger.info("Salvato correlation_matrix.png")
+    logger.info("  Salvato correlation_matrix.png")
 
 
 def plot_confusion_matrix(y_true, y_pred, labels: list[str], title: str,
@@ -207,13 +218,13 @@ def plot_confusion_matrix(y_true, y_pred, labels: list[str], title: str,
 
     cm = confusion_matrix(y_true, y_pred)
     fig, ax = plt.subplots(figsize=(8, 6), dpi=dpi)
-    disp = ConfusionMatrixDisplay(cm, display_labels=labels)
+    disp = ConfusionMatrixDisplay(cm, display_labels=[label.capitalize() for label in labels])
     disp.plot(ax=ax, cmap="Blues", values_format="d")
     ax.set_title(title, fontsize=13)
     fig.tight_layout()
     fig.savefig(os.path.join(subdir_dir, filename))
     plt.close(fig)
-    logger.info(f"Salvato {filename} in {subdir_dir}")
+    logger.info(f"  Salvato {filename} in {str(subdir_dir).replace(os.sep, '/')}")
 
 
 def plot_roc_curves(y_true, y_score, labels: list[str], title: str,
@@ -234,7 +245,7 @@ def plot_roc_curves(y_true, y_score, labels: list[str], title: str,
     for i in range(n_classes):
         fpr, tpr, _ = roc_curve(y_bin[:, i], y_score[:, i]) # type: ignore
         roc_auc = auc(fpr, tpr)
-        ax.plot(fpr, tpr, lw=2, label=f"{labels[i]} (AUC = {roc_auc:.3f})")
+        ax.plot(fpr, tpr, lw=2, label=f"{labels[i].capitalize()} (AUC = {roc_auc:.3f})")
 
     ax.plot([0, 1], [0, 1], "k--", lw=1, alpha=0.5)
     ax.set_xlabel("False Positive Rate")
@@ -244,7 +255,7 @@ def plot_roc_curves(y_true, y_score, labels: list[str], title: str,
     fig.tight_layout()
     fig.savefig(os.path.join(subdir_dir, filename))
     plt.close(fig)
-    logger.info(f"Salvato {filename} in {subdir_dir}")
+    logger.info(f"  Salvato {filename} in {str(subdir_dir).replace(os.sep, '/')}")
 
 
 def _find_feature_index(feature_names: list[str], candidates: list[str]):

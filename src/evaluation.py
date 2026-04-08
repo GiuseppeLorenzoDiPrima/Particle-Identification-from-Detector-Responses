@@ -46,8 +46,8 @@ def evaluate_model(y_true, y_pred, y_proba=None, n_classes=4) -> dict:
     Calcola metriche complete per un modello.
 
     Returns:
-        Dict con accuracy, f1_macro, precision_macro, recall_macro,
-        e opzionalmente auc_roc_macro e auc_per_class.
+        Dict con accuracy, f1_macro, precision_macro, recall_macro, f1_weighted,
+        precision_weighted, recall_weighted e opzionalmente auc_roc_macro e auc_per_class.
     """
     metrics = {
         "accuracy": accuracy_score(y_true, y_pred),
@@ -125,9 +125,9 @@ def generate_full_report(all_results: dict, data: dict, config: dict):
     """
     Genera il report completo: tabella, matrici di confusione, curve ROC.
     """
-    logger.info("=" * 50)
+    logger.info("=" * 55)
     logger.info("VALUTAZIONE FINALE E CONFRONTO MODELLI")
-    logger.info("=" * 50)
+    logger.info("=" * 55)
 
     results_dir = config["paths"]["results_dir"]
     os.makedirs(results_dir, exist_ok=True)
@@ -137,88 +137,153 @@ def generate_full_report(all_results: dict, data: dict, config: dict):
 
     # --- Tabella di confronto ---
     comparison = build_comparison_table(all_results, data)
-    logger.info(f"\nTabella di confronto:\n{comparison.to_string(index=False)}")
+    # Print rimossa. La tabella viene salvata come csv e mostrata solo alla fine.
+    # logger.info(f"\nTabella di confronto:\n{comparison.to_string(index=False)}")
 
     table_path = os.path.join(results_dir, "model_comparison.csv")
     comparison.to_csv(table_path, index=False)
-    logger.info(f"Tabella salvata in {table_path}")
+    logger.info(f"Tabella di confronto cvs salvata in {str(table_path).replace(os.sep, '/')}")
 
     # --- Model comparison report in formato text ---
     summary_path = os.path.join(results_dir, "report_model_comparison.txt")
     with open(summary_path, "w") as f:
+        f.write("=" * 17 + "\n")
         f.write("Model Comparison\n")
-        f.write("=" * 50 + "\n")
+        f.write("=" * 17 + "\n")
         f.write(comparison.to_string(index=False))
-    logger.info(f"Model comparison report salvato in {summary_path}")
+    logger.info(f"Report di confronto testuale salvato in {str(summary_path).replace(os.sep, '/')}")
 
     # --- Classification report per ogni modello ---
     for name, res in all_results.items():
         report = classification_report(
-            y_true, res["y_pred"], target_names=labels, digits=4
+            y_true, res["y_pred"], target_names=[label.capitalize() for label in labels], digits=4
         )
         logger.info(f"\nClassification Report - {name}:\n{report}")
 
         report_path = os.path.join(results_dir, f"report_{_safe_name(name)}.txt")
         with open(report_path, "w") as f:
+            f.write("=" * 55 + "\n")
             f.write(f"Classification Report - {name}\n")
-            f.write("=" * 50 + "\n")
+            f.write("=" * 55 + "\n")
             f.write(report) # type: ignore
+            
+        logger.info(f"Classification report salvato in {str(report_path).replace(os.sep, '/')}")
+        
+    print()
+    logger.info("Salvataggio immagini e report finale...")
 
     # --- Matrice di confusione per ogni modello ---
     for name, res in all_results.items():
-        plot_confusion_matrix(
-            y_true, res["y_pred"], labels,
-            title=f"Matrice di Confusione - {name}",
-            config=config,
-            filename=f"cm_{_safe_name(name)}.png",
-        )
+        if config["visualization"]["graph"]:
+            plot_confusion_matrix(
+                y_true, res["y_pred"], [label.capitalize() for label in labels],
+                title=f"Matrice di Confusione - {name}",
+                config=config,
+                filename=f"cm_{_safe_name(name)}.png",
+            )
 
     # --- Curve ROC per modelli con probabilita' ---
     for name, res in all_results.items():
         if res.get("y_proba") is not None:
-            plot_roc_curves(
-                y_true, res["y_proba"], labels,
-                title=f"Curve ROC - {name}",
-                config=config,
-                filename=f"roc_{_safe_name(name)}.png",
-            )
+            if config["visualization"]["graph"]:
+                plot_roc_curves(
+                    y_true, res["y_proba"], [label.capitalize() for label in labels],
+                    title=f"Curve ROC - {name}",
+                    config=config,
+                    filename=f"roc_{_safe_name(name)}.png",
+                )
 
-    # --- Grafico di confronto accuracy ---
-    _plot_accuracy_comparison(comparison, config)
+    # --- Grafico di confronto metriche ---
+    if config["visualization"]["graph"]:
+        _plot_metrics_comparison(comparison, config)
+        _plot_metric_groups_comparison(comparison, config)
 
     # --- Visualizzazione iperspazio / separabilita' inter/intra classi ---
-    _plot_hypercube_separability(data, all_results, config)
+    if config["visualization"]["graph"]:
+        _plot_hypercube_separability(data, all_results, config)
 
     return comparison
 
 
-def _plot_accuracy_comparison(comparison: pd.DataFrame, config: dict):
-    """Grafico a barre di confronto delle accuracy."""
+def _plot_metrics_comparison(comparison: pd.DataFrame, config: dict):
+    """Grafico a barre di confronto delle metriche selezionate, un file per metrica."""
     import matplotlib.pyplot as plt
 
+    metrics = config["visualization"].get("comparison_metrics", ["accuracy"])
+    metrics = [m for m in metrics if m in comparison.columns]
+    if not metrics:
+        logger.warning("Nessuna metrica valida trovata per il confronto grafico.")
+        return
+
     fig_dir = config["paths"]["figures_dir"]
-    subdir = os.path.join(fig_dir, "accuracy_comparison")
+    subdir = os.path.join(fig_dir, "model_comparison")
     os.makedirs(subdir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
 
-    fig, ax = plt.subplots(figsize=(10, 6), dpi=dpi)
-
     models = comparison["Modello"].tolist()
-    accs = comparison["accuracy"].tolist()
     colors = plt.cm.Set2(np.linspace(0, 1, len(models))) # type: ignore
 
-    bars = ax.barh(models[::-1], accs[::-1], color=colors)
-    for bar, acc in zip(bars, accs[::-1]):
-        ax.text(bar.get_width() + 0.002, bar.get_y() + bar.get_height() / 2,
-                f"{acc:.4f}", va="center", fontsize=10)
+    for metric in metrics:
+        fig, ax = plt.subplots(figsize=(10, 6), dpi=dpi)
+        values = comparison[metric].tolist()
+        bars = ax.barh(models[::-1], values[::-1], color=colors)
+        for bar, value in zip(bars, values[::-1]):
+            ax.text(bar.get_width() + 0.002, bar.get_y() + bar.get_height() / 2,
+                    f"{value:.4f}", va="center", fontsize=9)
+        ax.set_xlabel(metric.replace("_", " ").capitalize())
+        ax.set_title(f"Confronto {metric.replace('_', ' ').capitalize()} tra Modelli")
+        ax.set_xlim(0, 1.05)
+        fig.tight_layout()
 
-    ax.set_xlabel("Accuracy")
-    ax.set_title("Confronto Accuracy tra Modelli")
-    ax.set_xlim(0, 1.05)
+        filename = f"model_{metric}_comparison.png"
+        fig.savefig(os.path.join(subdir, filename))
+        plt.close(fig)
+        logger.info(f"  Salvato {filename} in {str(subdir).replace(os.sep, '/')}")
+
+
+def _plot_metric_groups_comparison(comparison: pd.DataFrame, config: dict):
+    """Grafico a barre raggruppate per modello con multiple metriche."""
+    import matplotlib.pyplot as plt
+
+    metrics = config["visualization"].get("comparison_group_metrics", ["accuracy"])
+    metrics = [m for m in metrics if m in comparison.columns]
+    if not metrics:
+        logger.warning("Nessuna metrica valida trovata per il confronto a gruppi.")
+        return
+
+    fig_dir = config["paths"]["figures_dir"]
+    subdir = os.path.join(fig_dir, "model_comparison")
+    os.makedirs(subdir, exist_ok=True)
+    dpi = config["visualization"]["dpi"]
+
+    models = comparison["Modello"].tolist()
+    n_models = len(models)
+    n_metrics = len(metrics)
+    x = np.arange(n_models)
+    width = 0.8 / n_metrics
+    fig, ax = plt.subplots(figsize=(max(12, n_models * 1.5), 6), dpi=dpi)
+
+    colors = plt.cm.Set2(np.linspace(0, 1, n_metrics)) # type: ignore
+    for i, metric in enumerate(metrics):
+        values = comparison[metric].tolist()
+        ax.bar(x + i * width, values, width, label=metric.replace("_", " ").capitalize(), color=colors[i])
+
+    ax.set_xticks(x + width * (n_metrics - 1) / 2)
+    ax.set_xticklabels(models, rotation=45, ha="right")
+    ax.set_ylabel("Valore")
+    ax.set_title("Confronto metriche per modello")
+    ax.set_ylim(0, 1.05)
+    ax.legend(title="Metrica")
+    for i, metric in enumerate(metrics):
+        values = comparison[metric].tolist()
+        for j, value in enumerate(values):
+            ax.text(x[j] + i * width, value + 0.01, f"{value:.3f}", ha="center", va="bottom", fontsize=8)
+
     fig.tight_layout()
-    fig.savefig(os.path.join(subdir, "model_comparison.png"))
+    filename = "model_comparison_groups.png"
+    fig.savefig(os.path.join(subdir, filename))
     plt.close(fig)
-    logger.info(f"Salvato model_comparison.png in {subdir}")
+    logger.info(f"  Salvato {filename} in {str(subdir).replace(os.sep, '/')}")
 
 
 def _ellipsoid_mesh(center, cov, n=20, scale=1.5):
@@ -350,7 +415,7 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
 
         ax.set_title(
             f"Ipercube 3D su feature selezionate: {name.title()}\n"
-            f"Inter-class dist={inter:.3f}, Intra-class dist(media)={avg_intra:.3f}",
+            f"Inter-class dist={inter:.3f}, Intra-class dist={avg_intra:.3f}",
             fontsize=11,
         )
         ax.set_xlabel(selected_features[0])
@@ -442,7 +507,7 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
                 f.write('</div>\n')
                 f.write('</body>\n')
                 f.write('</html>\n')
-            logger.info(f"Salvato interattivo plotly: {html_filename}")
+            logger.info(f"  Salvato interattivo plotly in {str(html_filename).replace(os.sep, '/')}")
         else:
             img_name = os.path.basename(filename)
             with open(html_filename, 'w', encoding='utf-8') as f:
@@ -460,9 +525,7 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
                 f.write(f'<img class="hypercube_img" src="{img_name}" alt="hypercube" />\n')
                 f.write('</body>\n')
                 f.write('</html>\n')
-            logger.info(f"Plotly non disponibile. Creato fallback HTML statico: {html_filename}")
-
-
+            logger.info(f"  Plotly non disponibile. Creato fallback HTML statico: {str(html_filename).replace(os.sep, '/')}")
 
         report_lines.append(
             f"{name}: inter={inter:.4f}, intra={avg_intra:.4f}, n_samples={len(y_test)}"
@@ -471,10 +534,10 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
     summary_path = os.path.join(results_dir, "hypercube_separability.txt")
     with open(summary_path, "w", encoding="utf-8") as f:
         f.write("Ipercube Separabilita\n")
-        f.write("=" * 50 + "\n")
+        f.write("=" * 55 + "\n")
         f.write("\n".join(report_lines))
 
-    logger.info(f"Salvato hypercube separability plot/report in {fig_dir}")
+    logger.info(f"  Salvato hypercube separability plot/report in {str(fig_dir).replace(os.sep, '/')}")
 
 
 def _safe_name(name: str) -> str:

@@ -1,6 +1,6 @@
-# ===========================================================
-# Particle Identification - Dipendenze Python
-# ===========================================================
+# ===================================================================
+# Particle Identification from Detector Responses - Dipendenze Python
+# ===================================================================
 
 # --- Core scientifico ---
 numpy>=1.24
@@ -14,13 +14,14 @@ xgboost>=2.0
 # --- Deep Learning ---
 torch>=2.1
 
-# --- Interpretabilita' ---
+# --- Interpretabilità ---
 shap>=0.43
 
 # --- Visualizzazione ---
 matplotlib>=3.7
 seaborn>=0.13
 plotly>=5.15
+tabulate>=0.9
 
 # --- Configurazione ---
 pyyaml>=6.0
@@ -28,5 +29,5 @@ pyyaml>=6.0
 # --- Dataset Kaggle ---
 kaggle>=1.6
 
-# --- Utilita' ---
+# --- Utilità ---
 tqdm>=4.65

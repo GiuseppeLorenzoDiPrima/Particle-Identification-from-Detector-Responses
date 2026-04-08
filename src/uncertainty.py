@@ -18,11 +18,21 @@ from src.visualization import get_particle_labels
 
 logger = logging.getLogger(__name__)
 
+# Mappa i nomi delle feature: nome -> simbolo per visualizzazione matplotlib
+FEATURE_NAMES = {
+    "p": r"$p$",
+    "theta": r"$\theta$",
+    "beta": r"$\beta$",
+    "nphe": r"$n_{phe}$",
+    "ein": r"$E_{in}$",
+    "eout": r"$E_{out}$"
+}
+
 
 def enable_mc_dropout(model):
     """
     Abilita il dropout durante l'inferenza per MC Dropout.
-    Mette in eval mode tutto tranne i layer di Dropout.
+    Mette in eval mode tutta la rete tranne i layer di Dropout.
     """
     model.eval()
     for module in model.modules():
@@ -37,7 +47,7 @@ def mc_dropout_predict(model, X: np.ndarray, n_iterations: int,
 
     Returns:
         Dict con:
-        - mean_proba: probabilita' media (n_samples, n_classes)
+        - mean_proba: probabilità media (n_samples, n_classes)
         - std_proba: deviazione standard (n_samples, n_classes)
         - predictions: classe predetta (n_samples,)
         - entropy: entropia predittiva (n_samples,)
@@ -92,9 +102,9 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
         logger.warning("Modello MLP non trovato, skip uncertainty analysis.")
         return {}
 
-    logger.info("=" * 50)
+    logger.info("=" * 55)
     logger.info("FASE 5b: Uncertainty Quantification (MC Dropout)")
-    logger.info("=" * 50)
+    logger.info("=" * 55)
 
     # Ottieni il modello MLP
     if "model" in mlp_results:
@@ -111,7 +121,7 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
     dpi = config["visualization"]["dpi"]
     labels = get_particle_labels(data["label_encoder"])
 
-    logger.info(f"  MC Dropout con {n_iter} iterazioni...")
+    logger.info(f"MC Dropout con {n_iter} iterazioni...")
     mc_results = mc_dropout_predict(model, data["X_test"], n_iter, device)
 
     y_test = data["y_test"]
@@ -121,10 +131,10 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
     # --- 1. Distribuzione dell'entropia ---
     fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
     correct = y_pred == y_test
-    ax.hist(entropy[correct], bins=50, alpha=0.6, label="Corretti", density=True)
-    ax.hist(entropy[~correct], bins=50, alpha=0.6, label="Errati", density=True)
-    ax.set_xlabel("Entropia predittiva")
-    ax.set_ylabel("Densita'")
+    ax.hist(entropy[correct], bins=50, alpha=0.6, label="Predizioni corrette", density=True)
+    ax.hist(entropy[~correct], bins=50, alpha=0.6, label="Predizioni errate", density=True)
+    ax.set_xlabel("Entropia")
+    ax.set_ylabel("Densità")
     ax.set_title("Distribuzione incertezza: predizioni corrette vs errate")
     ax.legend()
     fig.tight_layout()
@@ -144,8 +154,8 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
         fractions_kept.append(mask.mean())
 
     fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
-    ax.plot(fractions_kept, accs, "b-", lw=2)
-    ax.set_xlabel("Frazione di eventi accettati")
+    ax.plot([kept * 100 for kept in fractions_kept], accs, "b-", lw=2)
+    ax.set_xlabel("Percentuale di eventi accettati")
     ax.set_ylabel("Accuracy sugli eventi accettati")
     ax.set_title("Rejection Curve: accuracy vs soglia di incertezza")
     ax.axhline(y=(y_pred == y_test).mean(), color="r", ls="--",
@@ -159,8 +169,9 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
     # --- 3. Incertezza per classe ---
     fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
     class_entropies = [entropy[y_test == c] for c in range(len(labels))]
-    ax.boxplot(class_entropies, labels=labels) # type: ignore
-    ax.set_ylabel("Entropia predittiva")
+    capitalized_labels = [label.capitalize() for label in labels]
+    ax.boxplot(class_entropies, labels=capitalized_labels) # type: ignore
+    ax.set_ylabel("Entropia")
     ax.set_title("Distribuzione incertezza per tipo di particella")
     fig.tight_layout()
     fig.savefig(os.path.join(uncertainty_dir, "uncertainty_per_class.png"))
@@ -176,15 +187,17 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6), dpi=dpi)
 
+    capitalized_labels = [label.capitalize() for label in labels]
+
     # Colorato per classe
     for c in range(len(labels)):
         mask = y_test == c
         ax1.scatter(
             X_test_raw[mask, p_idx], X_test_raw[mask, e_idx],
-            s=2, alpha=0.3, label=labels[c],
+            s=2, alpha=0.3, label=capitalized_labels[c],
         )
-    ax1.set_xlabel(feature_names[p_idx])
-    ax1.set_ylabel(feature_names[e_idx])
+    ax1.set_xlabel(FEATURE_NAMES.get(feature_names[p_idx], feature_names[p_idx]))
+    ax1.set_ylabel(FEATURE_NAMES.get(feature_names[e_idx], feature_names[e_idx]))
     ax1.set_title("Classificazione nel piano p vs energia")
     ax1.legend(markerscale=5)
 
@@ -194,8 +207,8 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
         c=entropy, s=2, alpha=0.3, cmap="hot_r",
     )
     plt.colorbar(sc, ax=ax2, label="Entropia")
-    ax2.set_xlabel(feature_names[p_idx])
-    ax2.set_ylabel(feature_names[e_idx])
+    ax2.set_xlabel(FEATURE_NAMES.get(feature_names[p_idx], feature_names[p_idx]))
+    ax2.set_ylabel(FEATURE_NAMES.get(feature_names[e_idx], feature_names[e_idx]))
     ax2.set_title("Mappa di incertezza nel piano p vs energia")
 
     fig.tight_layout()

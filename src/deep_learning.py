@@ -1,7 +1,7 @@
 """
-Modulo Deep Learning per Particle Identification.
+Modulo di Deep Learning per la Particle Identification.
 
-Implementa un Multi-Layer Perceptron (MLP) con PyTorch, con:
+Implementa una Multi-Layer Perceptron (MLP) con framework PyTorch, con:
 - Early stopping
 - MC Dropout per uncertainty quantification
 - Supporto per SHAP interpretability
@@ -71,21 +71,23 @@ def _prepare_loaders(data: dict, config: dict):
 
 def train_mlp(data: dict, config: dict) -> dict:
     """
-    Addestra l'MLP con early stopping.
+    Addestra la MLP con early stopping per prevenire overfitting.
 
     Returns:
         Dict con modello, predizioni, metriche e storia di training.
     """
-    logger.info("=" * 50)
+    logger.info("=" * 55)
     logger.info("FASE 4: Deep Learning (MLP)")
-    logger.info("=" * 50)
+    logger.info("=" * 55)
 
     cfg = config["deep_learning"]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logger.info(f"Device: {device}")
+    logger.info(f"Device: {str(device).upper()} - {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
+    print()
 
     n_features = data["X_train"].shape[1]
     n_classes = len(np.unique(data["y_train"])) # type: ignore
+    class_names = data["class_names"] if "class_names" in data else [str(i) for i in range(n_classes)]
 
     # Modello
     model = ParticleMLP(
@@ -94,10 +96,11 @@ def train_mlp(data: dict, config: dict) -> dict:
         hidden_layers=cfg["hidden_layers"],
         dropout=cfg["dropout"],
     ).to(device)
-
-    logger.info(f"Architettura MLP:\n{model}")
+    
+    if cfg.get("show_architecture", False):
+        logger.info(f"Architettura MLP:\n\t{model}")
     n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    logger.info(f"Parametri trainabili: {n_params:,}")
+    logger.info(f"Totale dei parametri addestrabili: {n_params:,}")
 
     # Ottimizzatore e loss (con pesi per classi sbilanciate)
     optimizer = torch.optim.Adam(
@@ -110,7 +113,7 @@ def train_mlp(data: dict, config: dict) -> dict:
     class_weights = 1.0 / class_counts
     class_weights = class_weights / class_weights.sum() * len(class_weights)
     class_weights_tensor = torch.FloatTensor(class_weights).to(device)
-    logger.info(f"Class weights: {dict(zip(range(n_classes), map(float, class_weights.round(4))))}")
+    logger.info(f"Class weights: {dict(zip(class_names, map(float, class_weights.round(4))))}")
     criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
 
     # DataLoader
@@ -121,6 +124,8 @@ def train_mlp(data: dict, config: dict) -> dict:
     patience_counter = 0
     history = {"train_loss": [], "val_loss": [], "val_acc": []}
 
+    print()
+    logger.info(f"Training MLP for a maximum of {cfg['epochs']} epochs with early stopping patience of {cfg['early_stopping_patience']} epochs...")
     t0 = time.time()
     for epoch in range(cfg["epochs"]):
         # --- Training ---
@@ -174,11 +179,13 @@ def train_mlp(data: dict, config: dict) -> dict:
         else:
             patience_counter += 1
             if patience_counter >= cfg["early_stopping_patience"]:
-                logger.info(f"  Early stopping a epoch {epoch+1}")
+                logger.info(f"  Early stopping at epoch {epoch+1}")
                 break
 
     train_time = time.time() - t0
 
+    print()
+    logger.info(f"Testing MLP best model on test set...")
     # Ripristina il miglior modello
     model.load_state_dict(best_state)
     model.eval()
@@ -186,30 +193,38 @@ def train_mlp(data: dict, config: dict) -> dict:
     # Valutazione finale su test
     test_preds = []
     test_probas = []
+    test_losses = []
     with torch.no_grad():
         for X_batch, y_batch in test_loader:
             X_batch = X_batch.to(device)
+            y_batch = y_batch.to(device)
             outputs = model(X_batch)
+            loss = criterion(outputs, y_batch)
+            test_losses.append(loss.item())
             probas = torch.softmax(outputs, dim=1)
             test_preds.append(outputs.argmax(dim=1).cpu().numpy())
             test_probas.append(probas.cpu().numpy())
-
+    
     y_pred = np.concatenate(test_preds)
     y_proba = np.concatenate(test_probas)
     test_acc = accuracy_score(data["y_test"], y_pred)
+    test_loss = np.mean(test_losses)
 
-    logger.info(f"  MLP test accuracy: {test_acc:.4f} (train_time={train_time:.1f}s)")
+    logger.info(f"  MLP: test accuracy: {test_acc:.4f} and test loss: {test_loss:.4f} (train_time={train_time:.1f}s)")
 
     # Salva il modello
     model_path = os.path.join(config["paths"]["models_dir"], "mlp_best.pt")
     os.makedirs(config["paths"]["models_dir"], exist_ok=True)
     torch.save(model.state_dict(), model_path)
-    logger.info(f"  Modello salvato in {model_path}")
+    print()
+    logger.info(f"Saving best model...")
+    logger.info(f"  Salvato mlp_best.pt in {model_path.replace(os.sep, '/')}")
 
     return {
         "model": model,
         "model_name": "MLP (PyTorch)",
         "test_accuracy": test_acc,
+        "test_loss": test_loss,
         "y_pred": y_pred,
         "y_proba": y_proba,
         "train_time": train_time,
@@ -248,4 +263,5 @@ def plot_training_history(history: dict, config: dict):
     fig.tight_layout()
     fig.savefig(os.path.join(fig_dir, "mlp_training_history.png"))
     plt.close(fig)
+    print()
     logger.info("Salvato mlp_training_history.png")

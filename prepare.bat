@@ -34,9 +34,7 @@ pip3 install --upgrade --force-reinstall torch torchaudio --index-url https://do
 echo.
 echo ===================================
 echo  Setup completato!
-echo  Attiva il venv con:
-echo    .venv\Scripts\activate
-echo  Poi esegui:
+echo  Esegui:
 echo    python main.py --help
 echo ===================================
 pause

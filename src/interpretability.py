@@ -1,7 +1,7 @@
 """
-Modulo di interpretabilita' con SHAP values.
+Modulo di interpretabilità implementato attraverso SHAP values.
 
-Analizza quali feature sono piu' importanti per l'identificazione
+Analizza quali feature sono più importanti per l'identificazione
 di ciascun tipo di particella, sia per i modelli classici (tree-based)
 che per il MLP (deep learning).
 """
@@ -52,12 +52,12 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
         logger.info("Analisi SHAP disabilitata in config.")
         return
 
-    logger.info("=" * 50)
-    logger.info("FASE 5a: Interpretabilita' (SHAP)")
-    logger.info("=" * 50)
+    logger.info("=" * 55)
+    logger.info("FASE 5a: Interpretabilità (SHAP)")
+    logger.info("=" * 55)
 
     fig_dir = config["paths"]["figures_dir"]
-    shap_dir = os.path.join(fig_dir, "shap")
+    shap_dir = os.path.join(fig_dir, "SHAP")
     os.makedirs(shap_dir, exist_ok=True)
     n_samples = config["interpretability"]["shap_samples"]
     feature_names = data["feature_names"]
@@ -73,6 +73,7 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
 
     # --- SHAP per modelli tree-based ---
     tree_models = ["Random Forest", "XGBoost", "Decision Tree"]
+    logger.info(f"Analisi SHAP su {n_samples} campioni...")
     for name in tree_models:
         if name not in all_results:
             continue
@@ -124,20 +125,30 @@ def _plot_shap_all(sv_list, X_sample, feature_names, labels,
     Args:
         sv_list: lista di array (n_classes,), ciascuno (n_samples, n_features).
     """
+    # Mappa i nomi delle feature: nome -> simbolo per visualizzazione matplotlib
+    FEATURE_NAMES = {
+        "p": r"$p$",
+        "theta": r"$\theta$",
+        "beta": r"$\beta$",
+        "nphe": r"$n_{phe}$",
+        "ein": r"$E_{in}$",
+        "eout": r"$E_{out}$"
+    }
+    
     safe_name = _safe(model_name)
 
     # --- 1. Summary plot aggregato (tutte le classi) ---
     shap.summary_plot(
         sv_list, X_sample,
-        feature_names=feature_names,
+        feature_names=[FEATURE_NAMES.get(name, name) for name in feature_names],
         class_names=labels,
         show=False,
     )
     plt.title(f"SHAP Summary - {model_name}", fontsize=13)
     plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, f"shap_summary_{safe_name}.png"), dpi=dpi)
+    plt.savefig(os.path.join(fig_dir, f"SHAP_summary_{safe_name}.png"), dpi=dpi)
     plt.close("all")
-    logger.info(f"    Salvato shap_summary_{safe_name}.png")
+    logger.info(f"    Salvato SHAP_summary_{safe_name}.png")
 
     # --- 2. Bar plot: importanza media per feature ---
     mean_abs = np.mean(
@@ -146,27 +157,27 @@ def _plot_shap_all(sv_list, X_sample, feature_names, labels,
     sorted_idx = np.argsort(mean_abs)
     fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
     ax.barh(
-        [feature_names[i] for i in sorted_idx],
+        [FEATURE_NAMES.get(feature_names[i], feature_names[i]) for i in sorted_idx],#type: ignore
         mean_abs[sorted_idx],
     )
-    ax.set_xlabel("Mean |SHAP value|")
+    ax.set_xlabel("Mean Absolute SHAP value")
     ax.set_title(f"SHAP Feature Importance - {model_name}", fontsize=13)
     fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, f"shap_bar_{safe_name}.png"))
+    fig.savefig(os.path.join(fig_dir, f"SHAP_bar_{safe_name}.png"))
     plt.close(fig)
-    logger.info(f"    Salvato shap_bar_{safe_name}.png")
+    logger.info(f"    Salvato SHAP_bar_{safe_name}.png")
 
     # --- 3. Summary plot per singola classe ---
     for class_idx, label in enumerate(labels):
         shap.summary_plot(
             sv_list[class_idx], X_sample,
-            feature_names=feature_names,
+            feature_names=[FEATURE_NAMES.get(name, name) for name in feature_names],
             show=False,
         )
         plt.title(f"SHAP {model_name} - {label}", fontsize=13)
         plt.tight_layout()
         plt.savefig(
-            os.path.join(fig_dir, f"shap_{safe_name}_class_{class_idx}.png"),
+            os.path.join(fig_dir, f"SHAP_{safe_name}_class_{class_idx}.png"),
             dpi=dpi,
         )
         plt.close("all")

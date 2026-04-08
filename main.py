@@ -5,22 +5,24 @@ Particle Identification from Detector Responses
 Entry point del progetto. Esegue la pipeline completa:
 
   Fase 1: Caricamento dati e visualizzazione esplorativa
-  Fase 2: Baseline a tagli fisici (cuts-based PID)
-  Fase 3: Modelli di ML classici (LR, KNN, DT, RF, XGBoost)
+  Fase 2: Baseline a tagli (cuts-based PID)
+  Fase 3: Modelli di ML classici (LR, KNN, DT, RF e XGBoost)
   Fase 4: Deep Learning (MLP con PyTorch)
-  Fase 5: Interpretabilita' (SHAP) e Uncertainty (MC Dropout)
+  Fase 5: Interpretabilità (SHAP) e Uncertainty (MC Dropout)
   Fase 6: Valutazione finale e confronto
 
 Uso:
-    python main.py                  # pipeline completa
-    python main.py --phase 1        # solo una fase
-    python main.py --phases 1 2 3   # fasi selezionate
-    python main.py --config my.yaml # configurazione custom
-    python main.py --quick          # run veloce (100k campioni)
+    python main.py                  # Pipeline completa
+    python main.py --phase 1        # Solo una fase
+    python main.py --phases 1 2 3   # Fasi selezionate
+    python main.py --config my.yaml # Configurazione custom
+    python main.py --quick          # Run veloce (100k campioni)
 """
 
 import argparse
 import logging
+import matplotlib
+matplotlib.use("Agg")
 import os
 import sys
 import time
@@ -47,7 +49,7 @@ def setup_logging(config: dict):
 
     Console: mostra solo i messaggi del progetto (src.* e main),
              formato compatto senza timestamp.
-    File:    registra tutto (incluso shap, matplotlib, ecc.)
+    File:    registra tutto (incluso shap, matplotlib, ecc...)
              con timestamp completo.
     """
     log_dir = config["paths"]["log_dir"]
@@ -142,31 +144,36 @@ def main():
     # FASE 1: Caricamento dati e visualizzazione esplorativa
     # ================================================================
     if should_run(1, args):
-        logger.info("\n" + "=" * 50)
+        print()
+        logger.info("=" * 55)
         logger.info("FASE 1: Caricamento dati e visualizzazione")
-        logger.info("=" * 50)
+        logger.info("=" * 55)
 
         data = load_and_preprocess(config)
         setup_style(config)
 
-        logger.info("Generazione visualizzazioni esplorative...")
-        plot_bethe_bloch(data, config)
-        plot_feature_distributions(data, config)
-        plot_class_distribution(data, config)
-        plot_correlation_matrix(data, config)
-
+        if config["visualization"].get("graph", True):
+            print()
+            logger.info("Generazione visualizzazioni esplorative...")
+            plot_bethe_bloch(data, config)
+            plot_feature_distributions(data, config)
+            plot_class_distribution(data, config)
+            plot_correlation_matrix(data, config)
+        print()
         logger.info("Fase 1 completata.")
     else:
         # Carica comunque i dati se servono per le fasi successive
         data = load_and_preprocess(config)
 
     # ================================================================
-    # FASE 2: Baseline a tagli fisici
+    # FASE 2: Baseline a tagli
     # ================================================================
     if should_run(2, args):
         baseline_results = run_baseline(data, config)
         if baseline_results:
             all_results["Cuts-Based PID"] = baseline_results
+        print()
+        logger.info("Fase 2 completata.")
 
     # ================================================================
     # FASE 3: Modelli di ML classici
@@ -175,6 +182,8 @@ def main():
         classical_results = train_and_evaluate(data, config)
         all_results.update(classical_results)
         plot_feature_importance(classical_results, data["feature_names"], config)
+        print()
+        logger.info("Fase 3 completata.")
 
     # ================================================================
     # FASE 4: Deep Learning (MLP)
@@ -183,34 +192,45 @@ def main():
     if should_run(4, args):
         mlp_results = train_mlp(data, config)
         all_results["MLP (PyTorch)"] = mlp_results
-        plot_training_history(mlp_results["history"], config)
+        if config["visualization"].get("graph", True):
+            plot_training_history(mlp_results["history"], config)
+        print()
+        logger.info("Fase 4 completata.")
 
     # ================================================================
-    # FASE 5: Interpretabilita' e Uncertainty
+    # FASE 5: Interpretabilità e Uncertainty
     # ================================================================
     if should_run(5, args):
-        # 5a: SHAP
+        # 5a: Analisi SHAP
         run_shap_analysis(all_results, data, config)
 
-        # 5b: Uncertainty (MC Dropout) - solo se MLP e' stato addestrato
+        # 5b: Uncertainty (MC Dropout) - solo se la MLP è stata addestrata
         if mlp_results:
             run_uncertainty_analysis(mlp_results, data, config)
-        elif "MLP (PyTorch)" in all_results:
-            run_uncertainty_analysis(all_results["MLP (PyTorch)"], data, config)
+        print()
+        logger.info("Fase 5 completata.")
 
     # ================================================================
     # FASE 6: Valutazione finale e confronto
     # ================================================================
     if should_run(6, args) and all_results:
         comparison = generate_full_report(all_results, data, config)
-        logger.info(f"\n{'=' * 50}")
-        logger.info("RISULTATI FINALI")
-        logger.info(f"{'=' * 50}")
-        logger.info(f"\n{comparison.to_string(index=False)}")
+        print()
+        logger.info(f"{'=' * 55}")
+        logger.info("TABELLA FINALE RIEPILOGATIVA DEI RISULTATI OTTENUTI")
+        logger.info(f"{'=' * 55}")
+        print()
+        logger.info(f"{comparison.to_string(index=False)}")
+        print()
+        logger.info(f"Fase 6 completata.")
+        logger.info(f"{'=' * 80}")
+        logger.info("Addestramento e valutazione completati. Tutti i risultati sono stati salvati.")
+        logger.info(f"{'=' * 80}")
 
     # ================================================================
     elapsed = time.time() - t_start
-    logger.info(f"\nPipeline completata in {elapsed:.1f} secondi.")
+    print()
+    logger.info(f"Pipeline completata in {elapsed:.1f} secondi.")
     logger.info(f"Output salvati in: {config['paths']['output_dir']}/")
 
 

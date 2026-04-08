@@ -1,6 +1,6 @@
-# ============================================================================
+# =========================================================================
 # Particle Identification from Detector Responses - Configurazione Progetto
-# ============================================================================
+# =========================================================================
 
 # --- Percorsi ---
 paths:
@@ -14,76 +14,105 @@ paths:
 # --- Dataset Kaggle ---
 dataset:
   kaggle_slug: "naharrison/particle-identification-from-detector-responses"
-  filename: "pid-5M.csv"          # nome del CSV dentro l'archivio
-  test_size: 0.2
-  val_size: 0.1                   # sottratto dal train
+  filename: "pid-5M.csv"          # Nome del CSV dentro l'archivio
+  test_size: 0.15                 # 15% del totale per il test set
+  val_size: 0.2                   # 20% del train per il validation set (corrisponde al 17% del totale)
   random_state: 42
-  max_samples: null               # null = usa tutto; intero = subsample
+  max_samples: null               # null = usa tutto il dataset
 
 # --- Nomi delle feature e target ---
 features:
   # Le 6 risposte dei rivelatori + momento
   names:
-    - "p"           # momento della particella (GeV/c)
-    - "theta"       # angolo polare (rad)
-    - "beta"        # velocita' relativistica (v/c)
-    - "nphe"        # numero di fotoelettroni (Cherenkov)
-    - "ein"         # energia depositata inner calorimeter
-    - "eout"        # energia depositata outer calorimeter
-  target: "id"      # colonna target (tipo di particella)
+    - "p"           # Momento della particella (GeV/c)
+    - "theta"       # Angolo polare (rad)
+    - "beta"        # Velocità relativistica (v/c)
+    - "nphe"        # Numero di fotoelettroni (Cherenkov)
+    - "ein"         # Energia depositata inner calorimeter
+    - "eout"        # Energia depositata outer calorimeter
+  target: "id"      # Colonna target (tipo di particella)
 
 # --- Baseline a tagli (cuts-based PID) ---
 baseline_cuts:
-  # Soglie manuali sul piano dE/dx vs p (da affinare dopo visualizzazione)
   enabled: true
+  low_percentile: 10      # Limite inferiore per il range
+  high_percentile: 90     # Limite superiore per il range
+  show_range: true        # Visualizza i range calcolati per ogni classe
 
 # --- Modelli classici di ML ---
 classical_models:
   logistic_regression:
+    enabled: true
     max_iter: 1000
     multi_class: "multinomial"
+    solver: "lbfgs"
+    class_weight: "balanced"
   knn:
+    enabled: true
     n_neighbors: 7
   decision_tree:
+    enabled: true
     max_depth: 10
+    class_weight: "balanced"
   random_forest:
+    enabled: true
     n_estimators: 200
     max_depth: 15
     n_jobs: -1
+    class_weight: "balanced"
   xgboost:
+    enabled: true
     n_estimators: 300
     max_depth: 6
     learning_rate: 0.1
     n_jobs: -1
+    eval_metric: "mlogloss"
 
 # --- Cross-validation ---
 cross_validation:
+  enabled: true
   n_folds: 5
+  shuffle: true
   stratified: true
 
 # --- Deep Learning (MLP) ---
 deep_learning:
-  hidden_layers: [64, 128, 256, 64]  # architettura MLP
-  dropout: 0.3
-  learning_rate: 0.001
-  batch_size: 512
-  epochs: 350
-  early_stopping_patience: 20
-  weight_decay: 0.0001
+  hidden_layers: [64, 128, 256, 64]   # Architettura MLP
+  dropout: 0.3                        # Dropout per regolarizzazione
+  learning_rate: 0.001                # Learning rate per ottimizzazione
+  batch_size: 512                     # Dimensione del batch
+  epochs: 350                         # Numero massimo di epoche
+  early_stopping_patience: 20         # Pazienza per early stopping
+  weight_decay: 0.0001                # Learning rate decay (L2 regularization)
+  show_architecture: true
 
-# --- Interpretabilita' (SHAP) ---
+# --- Interpretabilità (SHAP) ---
 interpretability:
-  shap_samples: 1000            # campioni per calcolo SHAP values
   enabled: true
+  shap_samples: 1000                  # Numero di campioni per calcolo SHAP values
 
 # --- Uncertainty Quantification ---
 uncertainty:
-  mc_dropout_iterations: 50     # numero di forward pass per MC Dropout
   enabled: true
+  mc_dropout_iterations: 50           # Numero di forward pass per MC Dropout
 
 # --- Visualizzazione ---
 visualization:
-  dpi: 500
+  graph: true                         # Stampa i grafici durante l'esecuzione
+  dpi: 600
   figsize: [10, 7]
   style: "seaborn-v0_8-whitegrid"
   palette: "Set2"
+  comparison_metrics:       # Metriche utilizzate per la creazione dei grafici individuali
+    - "accuracy"
+    - "precision_macro"
+    - "recall_macro"
+    - "f1_macro"
+    - "precision_weighted"
+    - "recall_weighted"
+    - "f1_weighted"
+  comparison_group_metrics: # Metriche utilizzate per la creazione del grafico congiunto
+    - "accuracy"
+    - "precision_macro"
+    - "recall_macro"
+    - "f1_macro"
