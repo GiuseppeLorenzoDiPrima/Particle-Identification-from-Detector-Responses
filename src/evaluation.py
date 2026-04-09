@@ -200,7 +200,7 @@ def generate_full_report(all_results: dict, data: dict, config: dict):
 
     # --- Visualizzazione iperspazio / separabilita' inter/intra classi ---
     if config["visualization"]["graph"]:
-        _plot_hypercube_separability(data, all_results, config)
+        _plot_cube_separability(data, all_results, config)
 
     return comparison
 
@@ -316,13 +316,13 @@ def _ellipsoid_mesh(center, cov, n=20, scale=1.5):
     )
 
 
-def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
+def _plot_cube_separability(data: dict, all_results: dict, config: dict):
     """Visualizza i modelli nello spazio 3D ridotto con PCA e separabilita'."""
     import matplotlib.pyplot as plt
 
     fig_dir = config["paths"]["figures_dir"]
-    hypercube_dir = os.path.join(fig_dir, "hypercube_separability")
-    os.makedirs(hypercube_dir, exist_ok=True)
+    cube_dir = os.path.join(fig_dir, "cube_separability")
+    os.makedirs(cube_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
     results_dir = config["paths"]["results_dir"]
 
@@ -430,16 +430,16 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
         ax.legend(fontsize=9, loc="upper left")
         fig.tight_layout()
 
-        filename = f"hypercube_separability_{_safe_name(name)}.png"
-        fig.savefig(os.path.join(hypercube_dir, filename))
+        filename = f"cube_separability_{_safe_name(name)}.png"
+        fig.savefig(os.path.join(cube_dir, filename))
         plt.close(fig)
 
         # Plotly interattivo 3D (rotazione mouse/zoom) con ellissoidi per classe
-        html_filename = os.path.join(hypercube_dir, f"hypercube_separability_{_safe_name(name)}.html")
+        html_filename = os.path.join(cube_dir, f"cube_separability_{_safe_name(name)}.html")
 
         # CSS condiviso per HTML (no inline)
-        css_name = f"hypercube_separability_{_safe_name(name)}.css"
-        css_path = os.path.join(hypercube_dir, css_name)
+        css_name = f"cube_separability_{_safe_name(name)}.css"
+        css_path = os.path.join(cube_dir, css_name)
         if not os.path.exists(css_path):
             with open(css_path, "w", encoding="utf-8") as css:
                 css.write("body { font-family: Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }")
@@ -448,7 +448,7 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
                 css.write("\n")
                 css.write(".msg { margin: 16px 0; color: #333; }")
                 css.write("\n")
-                css.write("img.hypercube_img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }")
+                css.write("img.cube_img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }")
                 css.write("\n")
                 css.write(".plotly-wrapper { width: 100%; height: 100%; overflow: auto; }")
 
@@ -497,11 +497,11 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
                 f.write('<head>\n')
                 f.write('  <meta charset="utf-8" />\n')
                 f.write('  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n')
-                f.write(f'  <title>Ipercube 3D Interattivo - {_safe_name(name)}</title>\n')
+                f.write(f'  <title>Cube 3D Interattivo - {_safe_name(name)}</title>\n')
                 f.write(f'  <link rel="stylesheet" href="{css_name}" />\n')
                 f.write('</head>\n')
                 f.write('<body>\n')
-                f.write('<h1>Ipercube 3D Interattivo</h1>\n')
+                f.write('<h1>Cube 3D Interattivo</h1>\n')
                 f.write('<div class="plotly-wrapper">\n')
                 f.write(plotly_div)
                 f.write('</div>\n')
@@ -516,13 +516,13 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
                 f.write('<head>\n')
                 f.write('  <meta charset="utf-8" />\n')
                 f.write('  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n')
-                f.write(f'  <title>Ipercube 3D - {_safe_name(name)}</title>\n')
+                f.write(f'  <title>Cube 3D - {_safe_name(name)}</title>\n')
                 f.write(f'  <link rel="stylesheet" href="{css_name}" />\n')
                 f.write('</head>\n')
                 f.write('<body>\n')
-                f.write('<h1>Ipercube 3D (solo immagine)</h1>\n')
+                f.write('<h1>Cube 3D (solo immagine)</h1>\n')
                 f.write('<p class="msg">Installare plotly per la versione interattiva: python -m pip install plotly</p>\n')
-                f.write(f'<img class="hypercube_img" src="{img_name}" alt="hypercube" />\n')
+                f.write(f'<img class="cube_img" src="{img_name}" alt="cube" />\n')
                 f.write('</body>\n')
                 f.write('</html>\n')
             logger.info(f"  Plotly non disponibile. Creato fallback HTML statico: {str(html_filename).replace(os.sep, '/')}")
@@ -531,14 +531,13 @@ def _plot_hypercube_separability(data: dict, all_results: dict, config: dict):
             f"{name}: inter={inter:.4f}, intra={avg_intra:.4f}, n_samples={len(y_test)}"
         )
 
-    summary_path = os.path.join(results_dir, "hypercube_separability.txt")
+    summary_path = os.path.join(results_dir, "cube_separability.txt")
     with open(summary_path, "w", encoding="utf-8") as f:
-        f.write("Ipercube Separabilita\n")
+        f.write("Cube Separability\n")
         f.write("=" * 55 + "\n")
         f.write("\n".join(report_lines))
 
-    logger.info(f"  Salvato hypercube separability plot/report in {str(fig_dir).replace(os.sep, '/')}")
-
+    logger.info(f"  Salvato cube separability plot/report in {str(fig_dir).replace(os.sep, '/')}")
 
 def _safe_name(name: str) -> str:
     """Converte un nome modello in un nome file sicuro."""

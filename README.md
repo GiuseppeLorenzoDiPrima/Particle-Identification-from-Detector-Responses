@@ -1,6 +1,22 @@
-# Particle Identification from Detector Responses
+# Particle Identification via Machine Learning
 ## Machine Learning applicato alla Fisica delle Particelle
 
+> Multi-class classification of particles (e, π, K, p) using detector responses and ML/DL models.
+
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-DeepLearning-red)
+![XGBoost](https://img.shields.io/badge/XGBoost-ML-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
+Pipeline completa per Particle Identification (PID) basata su:
+- 5M eventi simulati (Monte Carlo)
+- Confronto tra approccio fisico tradizionale e ML/DL
+- Miglior modello: XGBoost / MLP con accuracy ~96.93%
+
+Obiettivo: dimostrare il vantaggio quantitativo del ML rispetto ai cut-based methods.
+
+---
+## Introduction
 Benvenuta/o. Il presente progetto è stato sviluppato nell’ambito della preparazione all’esame di Principi di Calcolo Tensoriale, previsto dal piano di studi del Corso di Dottorato di Ricerca in Sistemi Intelligenti per l’Ingegneria presso l’Università degli Studi di Enna Kore.
 
 L’elaborato propone l’applicazione di tecniche di Machine Learning e Deep Learning al contesto della fisica delle particelle. In particolare, il problema affrontato riguarda la classificazione multi-classe: l’obiettivo consiste nell’identificare la natura di una particella in ingresso — tra elettrone, pione, kaone e protone — sulla base delle risposte fornite da sei rivelatori.
@@ -8,6 +24,43 @@ L’elaborato propone l’applicazione di tecniche di Machine Learning e Deep Le
 I dati utilizzati sono stati reperiti dalla piattaforma [Kaggle](https://www.kaggle.com/database/naharrison/particle-identification-from-detector-responses) e consistono in 5 milioni di samples, ciascuno descritto da sei features. Tali dati sono stati generati mediante simulazioni basate sul metodo Monte Carlo.
 
 A tal fine, vengono messi a confronto l’approccio tradizionale, basato su tagli selettivi, e modelli avanzati di apprendimento automatico e profondo, al fine di valutarne le prestazioni e l’efficacia nel contesto considerato.
+
+## Results (Best Model)
+✔ XGBoost si attesta come miglior modello, superando le performance dei metodi tradizionali del circa 50% in termini di accuratezza:
+
+| Metric | Value |
+|------|------|
+| Accuracy | 0.9693 |
+| Precision (macro) | 0.8689 |
+| Recall (macro) | 0.8312 |
+| F1-Score (macro) | 0.9690 |
+| AUC ROC (macro) | 0.9945 |
+
+## Results
+
+<p align="center">
+  <img src="outputs/figures/pre-processing/bethe_bloch.png" width="45%">
+  <img src="outputs/figures/pre-processing/correlation_matrix.png" width="45%">
+</p>
+
+<p align="center">
+  <img src="outputs/figures/model_comparison/model_comparison_groups.png" width="45%">
+  <img src="outputs\figures\SHAP\SHAP_summary_xgboost.png" width="45%">
+</p>
+
+<p align="center">
+  <em>Top row: Bethe-Bloch and Correlation Matrix. Bottom row: Model Comparison and SHAP Summary (XGBoost).</em>
+</p>
+
+
+## Key Insights
+
+- I modelli tree-based (XGBoost, Random Forest) superano la baseline in accuratezza del ~52%
+- Le feature più discriminanti sono: velocità ridotta e  quantità di moto
+- L'incertezza (MC Dropout) evidenzia il l'andamento dell'accuratezza man mano vengono scartati eventi incerti
+
+## Reproducibility
+All experiments are run with fixed random seed (default: 42)
 
 ---
 
@@ -51,8 +104,7 @@ C:\Users\<TUO_UTENTE>\.kaggle
 ### Passo 3 - Configura la API
 
 6. Vai al path `C:\Users\<TUO_UTENTE>\.kaggle` e crea, al suo interno, un file `kaggle.json`
-
-7. Inserisci, all'interno del file `C:\Users\<TUO_UTENTE>\.kaggle\kaggle.json` il contenuto contenuto:
+7. Inserisci, all'interno del file `C:\Users\<TUO_UTENTE>\.kaggle\kaggle.json` il contenuto:
 
 ```json
 {"username": "il_tuo_username", "key": "una_stringa_esadecimale"}
@@ -159,7 +211,7 @@ python main.py
 
 ### Run veloce (consigliato per il primo test)
 
-Usa solo 100k campioni e meno epoche di training. Ideale per verificare che tutto funzioni prima del run completo:
+Eseguire le 6 fasi in sequenza solo su 100k campioni e meno epoche di training. Ideale per verificare che tutto funzioni prima del run completo:
 
 ```bash
 python main.py --quick
@@ -236,22 +288,22 @@ Particle-Identification-from-Detector-Responses/
 - Genera il diagramma di **Bethe-Bloch** (energia depositata vs quantità di moto)
 - Distribuzioni di ogni feature per tipo di particella
 - Distribuzione delle classi (per verificare eventuali sbilanciamenti)
-- Matrice di correlazione tra le feature
+- Matrice di correlazione tra le features
 
 ### Fase 2 - Baseline a tagli fisici
 
 - Implementa la PID "tradizionale" usata in fisica sperimentale
 - Per ogni classe, calcola l'intervallo [10°, 90°] percentile di ogni feature
 - Classifica un evento in base a quante feature cadono nell'intervallo atteso
-- In caso di parità, calcola la distanza dal centroide
-- Questo scenario viene impostato come **benchmark** da comparare con le tecniche di Machine Learning e deep learning
+- In caso di parità, calcola la distanza dal centroide dell'intervallo
+- Questo scenario viene impostato come **benchmark** da comparare con le tecniche di Machine Learning e Deep Learning
 
 ### Fase 3 - Modelli di ML classici
 
 - Addestra e confronta 5 modelli: Logistic Regression, K-NN, Decision Tree,
   Random Forest e XGBoost
 - Cross-validation stratificata (di default 5-fold)
-- Analisi della feature importance (quali segnali del rivelatore contano di più)
+- Analisi della feature importance (quali features contano di più)
 
 ### Fase 4 - Deep Learning (MLP)
 
@@ -272,13 +324,13 @@ Particle-Identification-from-Detector-Responses/
 - Matrice di confusione per ogni modello
 - Curve ROC one-vs-rest per ogni classe
 - Classification report dettagliato
-- Tutti i risultati venfono salvati al path: `outputs/results/`
+- Tutti i risultati vengono salvati al path: `outputs/results/`
 
 ---
 
 ## 7. Configurazione
 
-Tutti i parametri sono configurati in **`config.yaml`**. Puoi modificarli senza toccare il codice. Se non sai cosa modificare, lascia le impostazioni di default. Le sezioni principali:
+Tutti i parametri sono configurati in **`config.yaml`**. Puoi modificarli senza alterare il codice. Se non sai cosa modificare, lascia le impostazioni di default. Alcune della sezioni principali:
 
 | Sezione | Cosa controlla |
 |---------|---------------|
@@ -321,7 +373,7 @@ Dopo un'esecuzione completa, troverai in `outputs/`:
 | `bethe_bloch.png` | Diagramma energia vs quantità di moto per le 4 particelle |
 | `feature_distributions.png` | Distribuzioni di ogni feature per classe |
 | `class_distribution.png` | Bilanciamento delle classi |
-| `correlation_matrix.png` | Correlazioni tra feature |
+| `correlation_matrix.png` | Correlazioni tra features |
 | `feature_importance.png` | Importanza delle feature (LR, DT, RF, XGBoost) |
 | `mlp_training_history.png` | Loss e accuracy durante il training MLP |
 | `cm_*.png` | Matrice di confusione per ogni modello |
@@ -333,8 +385,8 @@ Dopo un'esecuzione completa, troverai in `outputs/`:
 | `uncertainty_per_class.png` | Incertezza per tipo di particella |
 | `uncertainty_scatter.png` | Mappa di incertezza nel piano p vs energia |
 | `model_comparison.png` | Confronto accuracy tra tutti i modelli |
-| `cube_separability_*.png` | Mapping tridimensionale delle feature per diversi modelli |
-| `model_*_comparison.png` | Comparazione di una metrica tra modelli |
+| `cube_separability_*.png` | Mapping tridimensionale delle features per diversi modelli |
+| `model_*_comparison.png` | Comparazione per singola metrica tra modelli |
 | `model_comparison_groups.png` | Comparazione di gruppo per più metriche tra più modelli |
 
 ### Risultati (`outputs/results/`)
@@ -343,11 +395,13 @@ Dopo un'esecuzione completa, troverai in `outputs/`:
 |------|-------------|
 | `model_comparison.csv` | Tabella con tutte le metriche per ogni modello |
 | `report_*.txt` | Classification report dettagliato per modello |
-| `cube_separability_*.txt` | Distanza intra-classe ed inter-classe tra feature |
+| `cube_separability_*.txt` | Distanza intra-classe ed inter-classe tra features |
 | `report_model_comparison.txt` | Report testuale finale (confronto tra modelli) |
 
 ### Logs (`outputs/logs/`)
 
+| File | Descrizione |
+|------|-------------|
 | `run.log` | Log completo dell'esecuzione |
 
 ### Modelli (`outputs/models/`)
@@ -357,8 +411,11 @@ Dopo un'esecuzione completa, troverai in `outputs/`:
 | `mlp_best.pt` | Pesi del miglior MLP (checkpoint PyTorch) |
 
 ---
-Per qualsiasi esigenza, i riferimenti restano:
-##### Giuseppe Lorenzo Di Prima
-###### Ph.D. Sistemi Intelligenti per l’Ingegneria
-###### Università degli Studi di Enna Kore, Italy
-##### giuseppelorenzo.diprima@unikorestudent.it
+---
+
+## Contatti
+
+**👤 Giuseppe Lorenzo Di Prima**  
+🎓 Ph.D. in Sistemi Intelligenti per l’Ingegneria  
+[🏫 Università degli Studi di Enna Kore, Italy](https://www.uke.it)  
+✉️ [giuseppelorenzo.diprima@unikorestudent.it](mailto:giuseppelorenzo.diprima@unikorestudent.it)
