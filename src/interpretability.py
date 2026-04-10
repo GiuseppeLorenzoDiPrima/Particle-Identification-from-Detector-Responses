@@ -65,7 +65,8 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
     n_classes = len(labels)
     setup_publication_style(config)
     dpi = config["visualization"]["dpi"]
-    figsize = config["visualization"]["figsize"]
+    # figsize = config["visualization"]["figsize"]
+    figsize = [10, 8]  # Override per grafici più compatti
 
     # Subsample per SHAP
     idx = np.random.choice(

@@ -100,7 +100,7 @@ uncertainty:
 visualization:
   graph: true                         # Stampa i grafici durante l'esecuzione
   dpi: 600
-  figsize: [18, 8]
+  figsize: [12, 8]
   style: "seaborn-v0_8-whitegrid"
   palette: "Set2"
   comparison_metrics:       # Metriche utilizzate per la creazione dei grafici individuali

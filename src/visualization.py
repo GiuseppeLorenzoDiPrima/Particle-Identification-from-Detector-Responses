@@ -161,7 +161,8 @@ def plot_feature_distributions(data: dict, config: dict):
     labels = get_particle_labels(data["label_encoder"])
     dpi = config["visualization"]["dpi"]
 
-    figsize = config["visualization"]["figsize"]
+    # figsize = config["visualization"]["figsize"]
+    figsize = [14, 8]  # Override per più spazio
     n_features = len(feature_names)
     n_cols = 3
     n_rows = (n_features + n_cols - 1) // n_cols
@@ -285,7 +286,7 @@ def plot_confusion_matrix(y_true, y_pred, labels: list[str], title: str,
 
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     disp = ConfusionMatrixDisplay(cm, display_labels=[label.capitalize() for label in labels])
-    disp.plot(ax=ax, cmap="Blues", values_format="d", colorbar=False)
+    disp.plot(ax=ax, cmap="Blues", values_format="d", colorbar=True)
 
     # Tutti e 4 i bordi esterni visibili e marcati
     for spine in ax.spines.values():
@@ -309,7 +310,7 @@ def plot_confusion_matrix(y_true, y_pred, labels: list[str], title: str,
 
 
 def plot_roc_curves(y_true, y_score, labels: list[str], title: str,
-                    config: dict, filename: str, subdir: str = "roc"):
+                    config: dict, filename: str, subdir: str = "roc_curves"):
     """
     Curve ROC one-vs-rest per classificazione multiclasse.
     y_score: matrice (n_samples, n_classes) di probabilita'.
@@ -320,7 +321,8 @@ def plot_roc_curves(y_true, y_score, labels: list[str], title: str,
     dpi = config["visualization"]["dpi"]
 
     setup_publication_style(config)
-    figsize = config["visualization"]["figsize"]
+    # figsize = config["visualization"]["figsize"]
+    figsize = [10, 8]  # Override per meno spazio
     n_classes = len(labels)
     y_bin = label_binarize(y_true, classes=list(range(n_classes)))
 
@@ -374,7 +376,8 @@ def plot_training_history(history: dict, config: dict):
     fig_dir = os.path.join(fig_path, "training")
     os.makedirs(fig_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
-    figsize = config["visualization"]["figsize"]
+    # figsize = config["visualization"]["figsize"]
+    figsize = [14, 8]  # Override per grafici più ampi
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize, dpi=dpi)
     epochs = range(1, len(history["train_loss"]) + 1)
@@ -415,7 +418,8 @@ def plot_feature_importance(results: dict, feature_names: list, config: dict):
     fig_dir = os.path.join(fig_path, "training")
     os.makedirs(fig_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
-    figsize = config["visualization"]["figsize"]
+    # figsize = config["visualization"]["figsize"]
+    figsize = [18, 8]  # Override per grafici più ampi
 
     models_with_fi = {
         name: res["feature_importance"]
@@ -460,7 +464,8 @@ def plot_uncertainty_results(mc_results: dict, y_test: np.ndarray,
     uncertainty_dir = os.path.join(fig_dir, "uncertainty")
     os.makedirs(uncertainty_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
-    figsize = config["visualization"]["figsize"]
+    # figsize = config["visualization"]["figsize"]
+    figsize = [10, 8]  # Override per grafici più compatti
     labels = get_particle_labels(data["label_encoder"])
 
     entropy = mc_results["entropy"]
@@ -526,6 +531,7 @@ def plot_uncertainty_results(mc_results: dict, y_test: np.ndarray,
     e_idx = next((i for i, n in enumerate(feature_names)
                   if n.lower() in ("ein", "eout")), 1)
 
+    figsize = [14, 8]  # Override per grafici più ampi
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize, dpi=dpi)
     for c in range(len(labels)):
         mask = y_test == c
@@ -607,9 +613,11 @@ def plot_shap_results(sv_list, X_sample, feature_names: list, labels: list,
     logger.info(f"    Salvato SHAP_bar_{safe_name}.png")
 
     # 3. Summary per singola classe
+    figsize = (10, 6)  # Plot più compatti per classe
+    
     for class_idx, label in enumerate(labels):
         shap.summary_plot(sv_list[class_idx], X_sample, feature_names=feat_labels,
-                          show=False, plot_size=None)
+                          show=False, plot_size=None, dot_size=12)
         fig_c = plt.gcf()
         ax_c = plt.gca()
         ax_c.set_title(f"SHAP {model_name} — {label.capitalize()}", fontsize=13, pad=12)
@@ -642,7 +650,8 @@ def plot_metrics_comparison(comparison: pd.DataFrame, config: dict):
     subdir = os.path.join(fig_dir, "model_comparison")
     os.makedirs(subdir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
-    figsize = config["visualization"]["figsize"]
+    # figsize = config["visualization"]["figsize"]
+    figsize = [10, 8]  # Override per grafici più compatti
 
     models = comparison["Modello"].tolist()
     n_models = len(models)
@@ -682,7 +691,8 @@ def plot_metric_groups_comparison(comparison: pd.DataFrame, config: dict):
     subdir = os.path.join(fig_dir, "model_comparison")
     os.makedirs(subdir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
-    figsize = config["visualization"]["figsize"]
+    # figsize = config["visualization"]["figsize"]
+    figsize = [14, 8]  # Override per grafici più ampi
 
     models = comparison["Modello"].tolist()
     n_models = len(models)
@@ -825,7 +835,7 @@ def plot_cube_separability(data: dict, all_results: dict, config: dict):
             intra = np.mean(pairwise_distances(points)) if len(points) > 1 else 0.0
             intra_dists.append(intra)
             ax.scatter3D(points[:, 0], points[:, 1], points[:, 2],  # type: ignore
-                         label=f"{labels[c].capitalize()} (pred)",
+                         label=f"{labels[c].capitalize()}",
                          color=IEEE_PALETTE[int(c) % len(IEEE_PALETTE)],
                          s=20, alpha=0.6, edgecolor="w")
 
@@ -838,13 +848,13 @@ def plot_cube_separability(data: dict, all_results: dict, config: dict):
                          color="black", marker="x", s=8, alpha=0.25, label=None)
 
         ax.set_title(
-            f"Cube 3D su feature selezionate: {name.title()}\n"
+            f"Cube 3D su feature selezionate: {name.title() if name.title() != 'K-Nn' else 'K-NN'}\n"
             f"Inter-class dist={inter:.3f}, Intra-class dist={avg_intra:.3f}",
             fontsize=11,
         )
-        ax.set_xlabel(selected_features[0])
-        ax.set_ylabel(selected_features[1] if len(selected_features) > 1 else "Feature-2")
-        ax.set_zlabel(selected_features[2] if len(selected_features) > 2 else "Feature-3")
+        ax.set_xlabel(FEATURE_NAMES.get(selected_features[0], selected_features[0]))
+        ax.set_ylabel(FEATURE_NAMES.get(selected_features[1], selected_features[1]) if len(selected_features) > 1 else "Feature-2")
+        ax.set_zlabel(FEATURE_NAMES.get(selected_features[2], selected_features[2]) if len(selected_features) > 2 else "Feature-3")
         ax.set_xlim(cube_min[0], cube_max[0])
         ax.set_ylim(cube_min[1], cube_max[1])
         ax.set_zlim(cube_min[2], cube_max[2])
@@ -894,9 +904,9 @@ def plot_cube_separability(data: dict, all_results: dict, config: dict):
 
             figly.update_layout(
                 scene=dict(
-                    xaxis_title=selected_features[0],
-                    yaxis_title=selected_features[1] if len(selected_features) > 1 else "Feature-2",
-                    zaxis_title=selected_features[2] if len(selected_features) > 2 else "Feature-3",
+                    xaxis_title=FEATURE_NAMES.get(selected_features[0], selected_features[0]),
+                    yaxis_title=FEATURE_NAMES.get(selected_features[1], selected_features[1]) if len(selected_features) > 1 else "Feature-2",
+                    zaxis_title=FEATURE_NAMES.get(selected_features[2], selected_features[2]) if len(selected_features) > 2 else "Feature-3",
                     aspectmode="cube",
                 ),
                 title=f"Cube 3D Interattivo: {_safe_model_name(name)}",
