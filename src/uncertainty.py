@@ -14,7 +14,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-from src.visualization import get_particle_labels
+from src.visualization import get_particle_labels, plot_uncertainty_results
 
 logger = logging.getLogger(__name__)
 
@@ -115,105 +115,8 @@ def run_uncertainty_analysis(mlp_results: dict, data: dict, config: dict):
         device = mlp_results["MLP (PyTorch)"].get("device", torch.device("cpu"))
 
     n_iter = config["uncertainty"]["mc_dropout_iterations"]
-    fig_dir = config["paths"]["figures_dir"]
-    uncertainty_dir = os.path.join(fig_dir, "uncertainty")
-    os.makedirs(uncertainty_dir, exist_ok=True)
-    dpi = config["visualization"]["dpi"]
-    labels = get_particle_labels(data["label_encoder"])
-
     logger.info(f"MC Dropout con {n_iter} iterazioni...")
     mc_results = mc_dropout_predict(model, data["X_test"], n_iter, device)
 
-    y_test = data["y_test"]
-    entropy = mc_results["entropy"]
-    y_pred = mc_results["predictions"]
-
-    # --- 1. Distribuzione dell'entropia ---
-    fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
-    correct = y_pred == y_test
-    ax.hist(entropy[correct], bins=50, alpha=0.6, label="Predizioni corrette", density=True)
-    ax.hist(entropy[~correct], bins=50, alpha=0.6, label="Predizioni errate", density=True)
-    ax.set_xlabel("Entropia")
-    ax.set_ylabel("Densità")
-    ax.set_title("Distribuzione incertezza: predizioni corrette vs errate")
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig(os.path.join(uncertainty_dir, "uncertainty_entropy.png"))
-    plt.close(fig)
-    logger.info("  Salvato uncertainty_entropy.png")
-
-    # --- 2. Rejection curve: accuracy vs % di eventi rifiutati ---
-    thresholds = np.linspace(0, np.max(entropy), 100)
-    accs = []
-    fractions_kept = []
-    for thr in thresholds:
-        mask = entropy <= thr
-        if mask.sum() == 0:
-            continue
-        accs.append((y_pred[mask] == y_test[mask]).mean())
-        fractions_kept.append(mask.mean())
-
-    fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
-    ax.plot([kept * 100 for kept in fractions_kept], accs, "b-", lw=2)
-    ax.set_xlabel("Percentuale di eventi accettati")
-    ax.set_ylabel("Accuracy sugli eventi accettati")
-    ax.set_title("Rejection Curve: accuracy vs soglia di incertezza")
-    ax.axhline(y=(y_pred == y_test).mean(), color="r", ls="--",
-               label=f"Accuracy senza filtro: {(y_pred == y_test).mean():.4f}")
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig(os.path.join(uncertainty_dir, "rejection_curve.png"))
-    plt.close(fig)
-    logger.info("  Salvato rejection_curve.png")
-
-    # --- 3. Incertezza per classe ---
-    fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
-    class_entropies = [entropy[y_test == c] for c in range(len(labels))]
-    capitalized_labels = [label.capitalize() for label in labels]
-    ax.boxplot(class_entropies, labels=capitalized_labels) # type: ignore
-    ax.set_ylabel("Entropia")
-    ax.set_title("Distribuzione incertezza per tipo di particella")
-    fig.tight_layout()
-    fig.savefig(os.path.join(uncertainty_dir, "uncertainty_per_class.png"))
-    plt.close(fig)
-    logger.info("  Salvato uncertainty_per_class.png")
-
-    # --- 4. Scatter delle regioni ad alta incertezza nel piano p vs dE/dx ---
-    feature_names = data["feature_names"]
-    X_test_raw = data["X_test_raw"]
-
-    p_idx = next((i for i, n in enumerate(feature_names) if n.lower() == "p"), 0)
-    e_idx = next((i for i, n in enumerate(feature_names) if n.lower() in ("ein", "eout")), 1)
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6), dpi=dpi)
-
-    capitalized_labels = [label.capitalize() for label in labels]
-
-    # Colorato per classe
-    for c in range(len(labels)):
-        mask = y_test == c
-        ax1.scatter(
-            X_test_raw[mask, p_idx], X_test_raw[mask, e_idx],
-            s=2, alpha=0.3, label=capitalized_labels[c],
-        )
-    ax1.set_xlabel(FEATURE_NAMES.get(feature_names[p_idx], feature_names[p_idx]))
-    ax1.set_ylabel(FEATURE_NAMES.get(feature_names[e_idx], feature_names[e_idx]))
-    ax1.set_title("Classificazione nel piano p vs energia")
-    ax1.legend(markerscale=5)
-
-    # Colorato per incertezza
-    sc = ax2.scatter(
-        X_test_raw[:, p_idx], X_test_raw[:, e_idx],
-        c=entropy, s=2, alpha=0.3, cmap="hot_r",
-    )
-    plt.colorbar(sc, ax=ax2, label="Entropia")
-    ax2.set_xlabel(FEATURE_NAMES.get(feature_names[p_idx], feature_names[p_idx]))
-    ax2.set_ylabel(FEATURE_NAMES.get(feature_names[e_idx], feature_names[e_idx]))
-    ax2.set_title("Mappa di incertezza nel piano p vs energia")
-
-    fig.tight_layout()
-    fig.savefig(os.path.join(uncertainty_dir, "uncertainty_scatter.png"))
-    plt.close(fig)
-    logger.info("  Salvato uncertainty_scatter.png")
-
+    plot_uncertainty_results(mc_results, data["y_test"], data, config)
     return mc_results

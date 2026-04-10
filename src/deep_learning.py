@@ -234,34 +234,7 @@ def train_mlp(data: dict, config: dict) -> dict:
 
 
 def plot_training_history(history: dict, config: dict):
-    """Grafico loss e accuracy durante il training."""
-    import matplotlib.pyplot as plt
-
-    fig_path = config["paths"]["figures_dir"]
-    os.makedirs(fig_path, exist_ok=True)
-    fig_dir = fig_path + "/training"
-    os.makedirs(fig_dir, exist_ok=True)
-    dpi = config["visualization"]["dpi"]
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5), dpi=dpi)
-
-    epochs = range(1, len(history["train_loss"]) + 1)
-
-    ax1.plot(epochs, history["train_loss"], label="Train Loss")
-    ax1.plot(epochs, history["val_loss"], label="Val Loss")
-    ax1.set_xlabel("Epoch")
-    ax1.set_ylabel("Loss")
-    ax1.set_title("Training e Validation Loss")
-    ax1.legend()
-
-    ax2.plot(epochs, history["val_acc"], label="Val Accuracy", color="green")
-    ax2.set_xlabel("Epoch")
-    ax2.set_ylabel("Accuracy")
-    ax2.set_title("Validation Accuracy")
-    ax2.legend()
-
-    fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, "mlp_training_history.png"))
-    plt.close(fig)
+    """Grafico loss e accuracy durante il training MLP."""
+    from src.visualization import plot_training_history as _plot
     print()
-    logger.info("Salvato mlp_training_history.png")
+    _plot(history, config)

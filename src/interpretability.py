@@ -13,7 +13,7 @@ import numpy as np
 import shap # type: ignore
 import matplotlib.pyplot as plt
 
-from src.visualization import get_particle_labels
+from src.visualization import get_particle_labels, setup_publication_style, plot_shap_results
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,9 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
     feature_names = data["feature_names"]
     labels = get_particle_labels(data["label_encoder"])
     n_classes = len(labels)
+    setup_publication_style(config)
     dpi = config["visualization"]["dpi"]
+    figsize = config["visualization"]["figsize"]
 
     # Subsample per SHAP
     idx = np.random.choice(
@@ -84,7 +86,7 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
             explainer = shap.TreeExplainer(model)
             raw_sv = explainer.shap_values(X_sample)
             sv_list = _to_list_format(raw_sv, n_classes)
-            _plot_shap_all(sv_list, X_sample, feature_names, labels, name, shap_dir, dpi)
+            plot_shap_results(sv_list, X_sample, feature_names, labels, name, shap_dir, dpi, figsize)
         except Exception as e:
             logger.warning(f"    SHAP fallito per {name}: {e}")
 
@@ -112,76 +114,9 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
             explainer = shap.KernelExplainer(mlp_predict, background)
             raw_sv = explainer.shap_values(X_shap)
             sv_list = _to_list_format(raw_sv, n_classes)
-            _plot_shap_all(sv_list, X_shap, feature_names, labels, "MLP", shap_dir, dpi)
+            plot_shap_results(sv_list, X_shap, feature_names, labels, "MLP", shap_dir, dpi, figsize)
         except Exception as e:
             logger.warning(f"    SHAP fallito per MLP: {e}")
-
-
-def _plot_shap_all(sv_list, X_sample, feature_names, labels,
-                   model_name, fig_dir, dpi):
-    """
-    Genera tutti i plot SHAP per un modello multiclasse.
-
-    Args:
-        sv_list: lista di array (n_classes,), ciascuno (n_samples, n_features).
-    """
-    # Mappa i nomi delle feature: nome -> simbolo per visualizzazione matplotlib
-    FEATURE_NAMES = {
-        "p": r"$p$",
-        "theta": r"$\theta$",
-        "beta": r"$\beta$",
-        "nphe": r"$n_{phe}$",
-        "ein": r"$E_{in}$",
-        "eout": r"$E_{out}$"
-    }
-    
-    safe_name = _safe(model_name)
-
-    # --- 1. Summary plot aggregato (tutte le classi) ---
-    shap.summary_plot(
-        sv_list, X_sample,
-        feature_names=[FEATURE_NAMES.get(name, name) for name in feature_names],
-        class_names=labels,
-        show=False,
-    )
-    plt.title(f"SHAP Summary - {model_name}", fontsize=13)
-    plt.tight_layout()
-    plt.savefig(os.path.join(fig_dir, f"SHAP_summary_{safe_name}.png"), dpi=dpi)
-    plt.close("all")
-    logger.info(f"    Salvato SHAP_summary_{safe_name}.png")
-
-    # --- 2. Bar plot: importanza media per feature ---
-    mean_abs = np.mean(
-        [np.abs(sv).mean(axis=0) for sv in sv_list], axis=0
-    )
-    sorted_idx = np.argsort(mean_abs)
-    fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
-    ax.barh(
-        [FEATURE_NAMES.get(feature_names[i], feature_names[i]) for i in sorted_idx],#type: ignore
-        mean_abs[sorted_idx],
-    )
-    ax.set_xlabel("Mean Absolute SHAP value")
-    ax.set_title(f"SHAP Feature Importance - {model_name}", fontsize=13)
-    fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, f"SHAP_bar_{safe_name}.png"))
-    plt.close(fig)
-    logger.info(f"    Salvato SHAP_bar_{safe_name}.png")
-
-    # --- 3. Summary plot per singola classe ---
-    for class_idx, label in enumerate(labels):
-        shap.summary_plot(
-            sv_list[class_idx], X_sample,
-            feature_names=[FEATURE_NAMES.get(name, name) for name in feature_names],
-            show=False,
-        )
-        plt.title(f"SHAP {model_name} - {label}", fontsize=13)
-        plt.tight_layout()
-        plt.savefig(
-            os.path.join(fig_dir, f"SHAP_{safe_name}_class_{class_idx}.png"),
-            dpi=dpi,
-        )
-        plt.close("all")
-    logger.info(f"    Salvati plot SHAP per classe ({model_name}).")
 
 
 def _safe(name: str) -> str:

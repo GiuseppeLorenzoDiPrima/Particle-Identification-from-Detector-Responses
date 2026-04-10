@@ -13,9 +13,7 @@ atteso. In caso di parità, si usa la distanza dal centroide della classe.
 import logging
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 from sklearn.metrics import accuracy_score
 from tabulate import tabulate
 
@@ -140,61 +138,9 @@ class CutsBasedPID:
         """Crea il grafico tabellare dei range feature per classe."""
         if feature_names is None or not self.ranges:
             return
-
-        style_name = config["visualization"].get("style", "seaborn-v0_8-whitegrid")
-        try:
-            sns.set_style(style_name)
-        except ValueError:
-            plt.style.use(style_name)
-        palette_name = config["visualization"].get("palette", "Set2")
-        try:
-            _ = sns.color_palette(palette_name, len(self.class_names))
-        except Exception:
-            _ = sns.color_palette("Set2", len(self.class_names))
-
-        fig_path = config["paths"]["figures_dir"]
-        fig_dir = os.path.join(fig_path, "baseline")
-        os.makedirs(fig_dir, exist_ok=True)
-
-        headers = ["Classe"] + [MPL_FEATURE_LABELS.get(name, name) for name in feature_names]
-        table_data = []
-        for class_id in range(len(self.class_names)):
-            row = [self.class_names[class_id]]
-            for j in range(len(feature_names)):
-                low, high = self.ranges[class_id][j]
-                row.append(f"{low:.3f} - {high:.3f}")
-            table_data.append(row)
-
-        fig, ax = plt.subplots(figsize=(12, max(2.5, len(self.class_names) * 0.9)), dpi=config["visualization"]["dpi"])
-        ax.axis("off")
-        fig.patch.set_facecolor("white")
-
-        table = ax.table(
-            cellText=table_data,
-            colLabels=headers,
-            cellLoc="center",
-            loc="center",
-            colLoc="center",
-            colColours=[sns.color_palette(palette_name)[0]] + ["#f7f7f7"] * len(feature_names),
-        )
-        table.auto_set_font_size(False)
-        table.set_fontsize(11)
-        table.scale(1, 1.8)
-
-        for (row, col), cell in table.get_celld().items():
-            if row == 0:
-                cell.set_text_props(weight="bold", color="white")
-                cell.set_facecolor(sns.color_palette(palette_name)[0])
-            else:
-                cell.set_linewidth(0.5)
-                cell.set_edgecolor("#dddddd")
-
-        ax.set_title("Range feature per classe (baseline cuts)", fontsize=16, pad=20)
-        fig.tight_layout()
-        fig.savefig(os.path.join(fig_dir, "range_features.png"), bbox_inches="tight", facecolor=fig.get_facecolor())
+        from src.visualization import plot_baseline_ranges
         print()
-        logger.info(f"Salvato range_features.png in {str(fig_dir).replace(os.sep, '/')}")
-        plt.close(fig)
+        plot_baseline_ranges(self.class_names, self.ranges, feature_names, config)
 
 def run_baseline(data: dict, config: dict) -> dict:
     """

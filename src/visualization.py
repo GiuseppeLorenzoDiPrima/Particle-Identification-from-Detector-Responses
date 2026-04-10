@@ -15,12 +15,32 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc, pairwise_distances
 from sklearn.preprocessing import label_binarize
+from sklearn.feature_selection import f_classif
+
+try:
+    import plotly.graph_objects as go  # type: ignore
+except ImportError:
+    go = None
 
 from src.data_loader import PARTICLE_NAMES
 
 logger = logging.getLogger(__name__)
+
+# Palette IEEE-ready: colori distinti, colorblind-safe, adatti alla stampa in B&W
+IEEE_PALETTE = [
+    "#2166AC",  # blu
+    "#B2182B",  # rosso scuro
+    "#1B7837",  # verde foresta
+    "#D6604D",  # arancione mattone
+    "#762A83",  # viola
+    "#4D4D4D",  # grigio antracite
+]
+
+# Linestyles e markers per curve multi-classe (ROC, convergenza, ecc.)
+IEEE_LINESTYLES = ["-", "--", "-.", ":", (0, (3, 1, 1, 1)), (0, (5, 1))]
+IEEE_MARKERS    = ["o", "s", "D", "^", "v", "P"]
 
 # Mappa i nomi delle feature: nome -> simbolo per visualizzazione matplotlib
 FEATURE_NAMES = {
@@ -32,14 +52,32 @@ FEATURE_NAMES = {
     "eout": r"$E_{out}$"
 }
 
-def setup_style(config: dict):
-    """Imposta lo stile dei grafici dalla configurazione."""
-    style = config["visualization"].get("style", "seaborn-v0_8-whitegrid")
-    try:
-        plt.style.use(style)
-    except OSError:
-        plt.style.use("seaborn-v0_8")
-    sns.set_palette(config["visualization"].get("palette", "Set2"))
+def setup_publication_style(config: dict):
+    """Imposta lo stile grafico per paper scientifici (IEEE-ready)."""
+    sns.set_palette(IEEE_PALETTE)
+    plt.rcParams.update({
+        "font.family": "serif",
+        "font.size": 11,
+        "axes.titlesize": 13,
+        "axes.labelsize": 11,
+        "xtick.labelsize": 10,
+        "ytick.labelsize": 10,
+        "legend.fontsize": 10,
+        "legend.frameon": True,
+        "legend.edgecolor": "#d3d3d3",
+        "legend.fancybox": False,
+        "figure.dpi": config["visualization"].get("dpi", 300),
+        "savefig.dpi": config["visualization"].get("dpi", 300),
+        "savefig.bbox": "tight",
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.linewidth": 1.2,
+        "axes.edgecolor": "#333333",
+        "text.color": "#333333",
+        "axes.labelcolor": "#333333",
+        "xtick.color": "#333333",
+        "ytick.color": "#333333",
+    })
 
 
 def get_particle_labels(label_encoder) -> list[str]:
@@ -58,7 +96,7 @@ def plot_bethe_bloch(data: dict, config: dict):
 
     Cerca le colonne piu' pertinenti tra le feature disponibili.
     """
-    setup_style(config)
+    setup_publication_style(config)
     fig_path = config["paths"]["figures_dir"]
     os.makedirs(fig_path, exist_ok=True)
     fig_dir = fig_path + "/pre-processing"
@@ -111,7 +149,7 @@ def plot_bethe_bloch(data: dict, config: dict):
 
 def plot_feature_distributions(data: dict, config: dict):
     """Distribuzione di ogni feature, separata per classe di particella."""
-    setup_style(config)
+    setup_publication_style(config)
     fig_path = config["paths"]["figures_dir"]
     os.makedirs(fig_path, exist_ok=True)
     fig_dir = fig_path + "/pre-processing"
@@ -123,22 +161,26 @@ def plot_feature_distributions(data: dict, config: dict):
     labels = get_particle_labels(data["label_encoder"])
     dpi = config["visualization"]["dpi"]
 
+    figsize = config["visualization"]["figsize"]
     n_features = len(feature_names)
     n_cols = 3
     n_rows = (n_features + n_cols - 1) // n_cols
 
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows), dpi=dpi)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(figsize[0] * n_cols / 2, figsize[1] * n_rows / 1.5), dpi=dpi)
     axes = axes.flatten()
 
     for i, fname in enumerate(feature_names):
         ax = axes[i]
-        for class_id in np.unique(y):
+        for j, class_id in enumerate(np.unique(y)):
             mask = y == class_id
             ax.hist(
-                X_raw[mask, i], bins=80, alpha=0.5,
+                X_raw[mask, i], bins=60, alpha=0.55,
                 label=labels[class_id].capitalize(), density=True,
+                color=IEEE_PALETTE[j % len(IEEE_PALETTE)],
+                edgecolor="white", linewidth=0.4,
             )
-        ax.set_title(fname, fontsize=11)
+        ax.set_title(fname, fontsize=11, pad=8)
+        ax.grid(True, linestyle=":", alpha=0.6, color="#A9A9A9")
         ax.legend(fontsize=8)
 
     # Nascondi assi vuoti
@@ -153,40 +195,59 @@ def plot_feature_distributions(data: dict, config: dict):
 
 
 def plot_class_distribution(data: dict, config: dict):
-    """Grafico a barre della distribuzione delle classi."""
-    setup_style(config)
+    """Grafici a barre della distribuzione delle classi per ogni split e per il dataset completo."""
+    setup_publication_style(config)
     fig_path = config["paths"]["figures_dir"]
     os.makedirs(fig_path, exist_ok=True)
     fig_dir = fig_path + "/pre-processing"
     os.makedirs(fig_dir, exist_ok=True)
 
-    y = data["y_train"]
     labels = get_particle_labels(data["label_encoder"])
     dpi = config["visualization"]["dpi"]
+    figsize = config["visualization"]["figsize"]
 
-    unique, counts = np.unique(y, return_counts=True)
+    # Ricostruisce y_full concatenando i tre split
+    y_full = np.concatenate([data["y_train"], data["y_val"], data["y_test"]])
 
-    fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
-    class_labels = [labels[u].capitalize() for u in unique]
-    bars = ax.bar(class_labels, counts, color=sns.color_palette())
-    ax.set_ylabel("Numero di samples")
-    ax.set_title("Distribuzione classi nel training set")
+    splits = {
+        "training":   (data["y_train"], "class_distribution_train.png"),
+        "validation": (data["y_val"],   "class_distribution_val.png"),
+        "test":       (data["y_test"],  "class_distribution_test.png"),
+        "completo":   (y_full,          "class_distribution_full.png"),
+    }
 
-    for bar, count in zip(bars, counts):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2, bar.get_height(),
-            f"{count:,}", ha="center", va="bottom", fontsize=10,
+    for split_name, (y, filename) in splits.items():
+        unique, counts = np.unique(y, return_counts=True)
+        class_labels = [labels[u].capitalize() for u in unique]
+
+        fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+        bars = ax.bar(
+            class_labels, counts,
+            color=IEEE_PALETTE[:len(unique)],
+            edgecolor="#333333", linewidth=0.8,
         )
+        ax.set_ylabel("Numero di campioni", fontweight="bold")
+        ax.set_title(f"Distribuzione classi — {split_name} set", pad=12)
+        ax.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9", axis="y", zorder=0)
+        for bar in bars:
+            bar.set_zorder(2)
 
-    fig.tight_layout()
-    fig.savefig(os.path.join(fig_dir, "class_distribution.png"))
-    plt.close(fig)
-    logger.info("  Salvato class_distribution.png")
+        for bar, count in zip(bars, counts):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + max(counts) * 0.01,
+                f"{count:,}", ha="center", va="bottom", fontsize=10,
+            )
+
+        fig.tight_layout()
+        fig.savefig(os.path.join(fig_dir, filename))
+        plt.close(fig)
+        logger.info(f"  Salvato {filename}")
 
 
 def plot_correlation_matrix(data: dict, config: dict):
-    """Matrice di correlazione tra le feature."""
-    setup_style(config)
+    """Matrice di correlazione tra le features."""
+    setup_publication_style(config)
     fig_path = config["paths"]["figures_dir"]
     os.makedirs(fig_path, exist_ok=True)
     fig_dir = fig_path + "/pre-processing"
@@ -196,12 +257,13 @@ def plot_correlation_matrix(data: dict, config: dict):
     X_raw = data["X_train_raw"]
     dpi = config["visualization"]["dpi"]
 
+    figsize = config["visualization"]["figsize"]
     df = pd.DataFrame(X_raw, columns=feature_names)
     corr = df.corr()
 
-    fig, ax = plt.subplots(figsize=(8, 6), dpi=dpi)
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm", center=0, ax=ax)
-    ax.set_title("Matrice di correlazione delle feature")
+    ax.set_title("Matrice di correlazione delle features")
     fig.tight_layout()
     fig.savefig(os.path.join(fig_dir, "correlation_matrix.png"))
     plt.close(fig)
@@ -216,11 +278,30 @@ def plot_confusion_matrix(y_true, y_pred, labels: list[str], title: str,
     os.makedirs(subdir_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
 
+    setup_publication_style(config)
+    figsize = config["visualization"]["figsize"]
     cm = confusion_matrix(y_true, y_pred)
-    fig, ax = plt.subplots(figsize=(8, 6), dpi=dpi)
+    n = cm.shape[0]
+
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     disp = ConfusionMatrixDisplay(cm, display_labels=[label.capitalize() for label in labels])
-    disp.plot(ax=ax, cmap="Blues", values_format="d")
-    ax.set_title(title, fontsize=13)
+    disp.plot(ax=ax, cmap="Blues", values_format="d", colorbar=False)
+
+    # Tutti e 4 i bordi esterni visibili e marcati
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(1.5)
+        spine.set_edgecolor("#333333")
+
+    # Rimuovi la griglia di default (cade a metà cella) e sostituisci
+    # con linee di separazione allineate ai bordi delle celle
+    ax.set_xticks(np.arange(-0.5, n, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, n, 1), minor=True)
+    ax.grid(which="minor", color="#bbbbbb", linewidth=0.6, linestyle="-")
+    ax.grid(which="major", visible=False)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    ax.set_title(title, pad=12)
     fig.tight_layout()
     fig.savefig(os.path.join(subdir_dir, filename))
     plt.close(fig)
@@ -238,20 +319,35 @@ def plot_roc_curves(y_true, y_score, labels: list[str], title: str,
     os.makedirs(subdir_dir, exist_ok=True)
     dpi = config["visualization"]["dpi"]
 
+    setup_publication_style(config)
+    figsize = config["visualization"]["figsize"]
     n_classes = len(labels)
     y_bin = label_binarize(y_true, classes=list(range(n_classes)))
 
-    fig, ax = plt.subplots(figsize=(8, 6), dpi=dpi)
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     for i in range(n_classes):
         fpr, tpr, _ = roc_curve(y_bin[:, i], y_score[:, i]) # type: ignore
         roc_auc = auc(fpr, tpr)
-        ax.plot(fpr, tpr, lw=2, label=f"{labels[i].capitalize()} (AUC = {roc_auc:.3f})")
+        ax.plot(
+            fpr, tpr,
+            lw=2,
+            color=IEEE_PALETTE[i % len(IEEE_PALETTE)],
+            linestyle=IEEE_LINESTYLES[i % len(IEEE_LINESTYLES)],
+            marker=IEEE_MARKERS[i % len(IEEE_MARKERS)],
+            markersize=5,
+            markeredgecolor="white",
+            markeredgewidth=0.8,
+            markevery=max(1, len(fpr) // 10),
+            alpha=0.95,
+            label=f"{labels[i].capitalize()} (AUC = {roc_auc:.3f})",
+        )
 
-    ax.plot([0, 1], [0, 1], "k--", lw=1, alpha=0.5)
-    ax.set_xlabel("False Positive Rate")
-    ax.set_ylabel("True Positive Rate")
-    ax.set_title(title, fontsize=13)
-    ax.legend(fontsize=10)
+    ax.plot([0, 1], [0, 1], color="#999999", lw=1, linestyle="--", alpha=0.7, zorder=1)
+    ax.set_xlabel("False Positive Rate", fontweight="bold")
+    ax.set_ylabel("True Positive Rate", fontweight="bold")
+    ax.set_title(title, pad=12)
+    ax.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9", zorder=0)
+    ax.legend(fontsize=9, framealpha=0.95)
     fig.tight_layout()
     fig.savefig(os.path.join(subdir_dir, filename))
     plt.close(fig)
@@ -264,3 +360,635 @@ def _find_feature_index(feature_names: list[str], candidates: list[str]):
         if name.lower() in [c.lower() for c in candidates]:
             return i
     return None
+
+
+# ---------------------------------------------------------------------------
+# Training
+# ---------------------------------------------------------------------------
+
+def plot_training_history(history: dict, config: dict):
+    """Grafico loss e accuracy durante il training MLP."""
+    setup_publication_style(config)
+    fig_path = config["paths"]["figures_dir"]
+    os.makedirs(fig_path, exist_ok=True)
+    fig_dir = os.path.join(fig_path, "training")
+    os.makedirs(fig_dir, exist_ok=True)
+    dpi = config["visualization"]["dpi"]
+    figsize = config["visualization"]["figsize"]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize, dpi=dpi)
+    epochs = range(1, len(history["train_loss"]) + 1)
+
+    ax1.plot(epochs, history["train_loss"], label="Train Loss", linewidth=1.8,
+             color=IEEE_PALETTE[0])
+    ax1.plot(epochs, history["val_loss"], label="Val Loss", linewidth=1.8,
+             color=IEEE_PALETTE[1], linestyle="--")
+    ax1.set_xlabel("Epoch", fontweight="bold")
+    ax1.set_ylabel("Loss", fontweight="bold")
+    ax1.set_title("Training e Validation Loss", pad=12)
+    ax1.legend()
+    ax1.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9")
+
+    ax2.plot(epochs, history["val_acc"], label="Val Accuracy", linewidth=1.8,
+             color=IEEE_PALETTE[2])
+    ax2.set_xlabel("Epoch", fontweight="bold")
+    ax2.set_ylabel("Accuracy", fontweight="bold")
+    ax2.set_title("Validation Accuracy", pad=12)
+    ax2.legend()
+    ax2.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9")
+
+    fig.tight_layout()
+    fig.savefig(os.path.join(fig_dir, "mlp_training_history.png"))
+    plt.close(fig)
+    logger.info("  Salvato mlp_training_history.png")
+
+
+# ---------------------------------------------------------------------------
+# Modelli classici
+# ---------------------------------------------------------------------------
+
+def plot_feature_importance(results: dict, feature_names: list, config: dict):
+    """Grafico della feature importance per i modelli che la supportano."""
+    setup_publication_style(config)
+    fig_path = config["paths"]["figures_dir"]
+    os.makedirs(fig_path, exist_ok=True)
+    fig_dir = os.path.join(fig_path, "training")
+    os.makedirs(fig_dir, exist_ok=True)
+    dpi = config["visualization"]["dpi"]
+    figsize = config["visualization"]["figsize"]
+
+    models_with_fi = {
+        name: res["feature_importance"]
+        for name, res in results.items()
+        if res["feature_importance"] is not None
+    }
+    if not models_with_fi:
+        return
+
+    n = len(models_with_fi)
+    fig, axes = plt.subplots(1, n, figsize=figsize, dpi=dpi)
+    if n == 1:
+        axes = [axes]
+
+    for ax, (name, fi) in zip(axes, models_with_fi.items()):
+        sorted_fi = sorted(fi.items(), key=lambda x: x[1], reverse=True)
+        feat_names = [FEATURE_NAMES.get(x[0], x[0]) for x in sorted_fi]
+        values = [x[1] for x in sorted_fi]
+        n_feats = len(feat_names)
+        colors = [IEEE_PALETTE[i % len(IEEE_PALETTE)] for i in range(n_feats)]
+        ax.barh(feat_names[::-1], values[::-1], color=colors[::-1],
+                edgecolor="#333333", linewidth=0.8, zorder=2)
+        ax.set_title(f"Feature Importance — {name}", pad=12)
+        ax.set_xlabel("Importanza", fontweight="bold")
+        ax.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9", axis="x", zorder=0)
+
+    fig.tight_layout()
+    fig.savefig(os.path.join(fig_dir, "feature_importance.png"))
+    plt.close(fig)
+    logger.info("  Salvato feature_importance.png")
+
+
+# ---------------------------------------------------------------------------
+# Uncertainty quantification
+# ---------------------------------------------------------------------------
+
+def plot_uncertainty_results(mc_results: dict, y_test: np.ndarray,
+                              data: dict, config: dict):
+    """Quattro grafici di uncertainty quantification da MC Dropout."""
+    setup_publication_style(config)
+    fig_dir = config["paths"]["figures_dir"]
+    uncertainty_dir = os.path.join(fig_dir, "uncertainty")
+    os.makedirs(uncertainty_dir, exist_ok=True)
+    dpi = config["visualization"]["dpi"]
+    figsize = config["visualization"]["figsize"]
+    labels = get_particle_labels(data["label_encoder"])
+
+    entropy = mc_results["entropy"]
+    y_pred = mc_results["predictions"]
+
+    # 1. Distribuzione dell'entropia
+    correct = y_pred == y_test
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    ax.hist(entropy[correct], bins=50, alpha=0.6, label="Predizioni corrette",
+            density=True, color=IEEE_PALETTE[0], edgecolor="white", linewidth=0.4)
+    ax.hist(entropy[~correct], bins=50, alpha=0.6, label="Predizioni errate",
+            density=True, color=IEEE_PALETTE[1], edgecolor="white", linewidth=0.4)
+    ax.set_xlabel("Entropia", fontweight="bold")
+    ax.set_ylabel("Densità", fontweight="bold")
+    ax.set_title("Distribuzione incertezza: predizioni corrette vs errate", pad=12)
+    ax.legend()
+    ax.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9")
+    fig.tight_layout()
+    fig.savefig(os.path.join(uncertainty_dir, "uncertainty_entropy.png"))
+    plt.close(fig)
+    logger.info("  Salvato uncertainty_entropy.png")
+
+    # 2. Rejection curve
+    thresholds = np.linspace(0, np.max(entropy), 100)
+    accs, fractions_kept = [], []
+    for thr in thresholds:
+        mask = entropy <= thr
+        if mask.sum() == 0:
+            continue
+        accs.append((y_pred[mask] == y_test[mask]).mean())
+        fractions_kept.append(mask.mean())
+
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    ax.plot([k * 100 for k in fractions_kept], accs, lw=2, color=IEEE_PALETTE[0])
+    ax.set_xlabel("Percentuale di eventi accettati", fontweight="bold")
+    ax.set_ylabel("Accuracy sugli eventi accettati", fontweight="bold")
+    ax.set_title("Rejection Curve: accuracy vs soglia di incertezza", pad=12)
+    ax.axhline(y=(y_pred == y_test).mean(), color=IEEE_PALETTE[1], ls="--",
+               label=f"Accuracy senza filtro: {(y_pred == y_test).mean():.4f}")
+    ax.legend()
+    ax.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9")
+    fig.tight_layout()
+    fig.savefig(os.path.join(uncertainty_dir, "rejection_curve.png"))
+    plt.close(fig)
+    logger.info("  Salvato rejection_curve.png")
+
+    # 3. Incertezza per classe
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    class_entropies = [entropy[y_test == c] for c in range(len(labels))]
+    ax.boxplot(class_entropies, labels=[l.capitalize() for l in labels])  # type: ignore
+    ax.set_ylabel("Entropia", fontweight="bold")
+    ax.set_title("Distribuzione incertezza per tipo di particella", pad=12)
+    ax.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9")
+    fig.tight_layout()
+    fig.savefig(os.path.join(uncertainty_dir, "uncertainty_per_class.png"))
+    plt.close(fig)
+    logger.info("  Salvato uncertainty_per_class.png")
+
+    # 4. Scatter p vs energia colorato per classe e per entropia
+    feature_names = data["feature_names"]
+    X_test_raw = data["X_test_raw"]
+    p_idx = next((i for i, n in enumerate(feature_names) if n.lower() == "p"), 0)
+    e_idx = next((i for i, n in enumerate(feature_names)
+                  if n.lower() in ("ein", "eout")), 1)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize, dpi=dpi)
+    for c in range(len(labels)):
+        mask = y_test == c
+        ax1.scatter(X_test_raw[mask, p_idx], X_test_raw[mask, e_idx],
+                    s=2, alpha=0.3, label=labels[c].capitalize(),
+                    color=IEEE_PALETTE[c % len(IEEE_PALETTE)])
+    ax1.set_xlabel(FEATURE_NAMES.get(feature_names[p_idx], feature_names[p_idx]),
+                   fontweight="bold")
+    ax1.set_ylabel(FEATURE_NAMES.get(feature_names[e_idx], feature_names[e_idx]),
+                   fontweight="bold")
+    ax1.set_title("Classificazione nel piano p vs energia", pad=12)
+    ax1.legend(markerscale=5)
+
+    sc = ax2.scatter(X_test_raw[:, p_idx], X_test_raw[:, e_idx],
+                     c=entropy, s=2, alpha=0.3, cmap="hot_r")
+    plt.colorbar(sc, ax=ax2, label="Entropia")
+    ax2.set_xlabel(FEATURE_NAMES.get(feature_names[p_idx], feature_names[p_idx]),
+                   fontweight="bold")
+    ax2.set_ylabel(FEATURE_NAMES.get(feature_names[e_idx], feature_names[e_idx]),
+                   fontweight="bold")
+    ax2.set_title("Mappa di incertezza nel piano p vs energia", pad=12)
+
+    fig.tight_layout()
+    fig.savefig(os.path.join(uncertainty_dir, "uncertainty_scatter.png"))
+    plt.close(fig)
+    logger.info("  Salvato uncertainty_scatter.png")
+
+
+# ---------------------------------------------------------------------------
+# SHAP
+# ---------------------------------------------------------------------------
+
+def plot_shap_results(sv_list, X_sample, feature_names: list, labels: list,
+                      model_name: str, fig_dir: str, dpi: int, figsize: tuple):
+    """Genera summary plot, bar plot e plot per classe per un modello SHAP."""
+    import shap  # type: ignore
+
+    CLASS_NAMES = {1: "elettrone", 2: "kaone", 3: "pione", 4: "protone"}
+
+    def _safe(name: str) -> str:
+        return name.lower().replace(" ", "_").replace("(", "").replace(")", "")
+
+    feat_labels = [FEATURE_NAMES.get(n, n) for n in feature_names]
+    safe_name = _safe(model_name)
+    capitalized_labels = [l.capitalize() for l in labels]
+
+    # 1. Summary aggregato
+    shap.summary_plot(sv_list, X_sample, feature_names=feat_labels,
+                      class_names=capitalized_labels, show=False, plot_size=None)
+    fig_s = plt.gcf()
+    ax_s = plt.gca()
+    ax_s.set_title(f"SHAP Summary — {model_name}", fontsize=13, pad=12)
+    ax_s.set_xlabel("Mean Absolute SHAP value", fontweight="bold", fontsize=11)
+    ax_s.tick_params(labelsize=10)
+    leg = ax_s.get_legend()
+    if leg is not None:
+        for text in leg.get_texts():
+            text.set_fontsize(10)
+    fig_s.set_size_inches(figsize)
+    plt.tight_layout()
+    plt.savefig(os.path.join(fig_dir, f"SHAP_summary_{safe_name}.png"), dpi=dpi)
+    plt.close("all")
+    logger.info(f"    Salvato SHAP_summary_{safe_name}.png")
+
+    # 2. Bar plot importanza media
+    mean_abs = np.mean([np.abs(sv).mean(axis=0) for sv in sv_list], axis=0)
+    sorted_idx = np.argsort(mean_abs)
+    n_feats = len(sorted_idx)
+    bar_colors = [IEEE_PALETTE[i % len(IEEE_PALETTE)] for i in range(n_feats)]
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    ax.barh([feat_labels[i] for i in sorted_idx], mean_abs[sorted_idx],
+            color=bar_colors, edgecolor="#333333", linewidth=0.8, zorder=2)
+    ax.set_xlabel("Mean Absolute SHAP value", fontweight="bold")
+    ax.set_title(f"SHAP Feature Importance — {model_name}", pad=12)
+    ax.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9", axis="x", zorder=0)
+    fig.tight_layout()
+    fig.savefig(os.path.join(fig_dir, f"SHAP_bar_{safe_name}.png"))
+    plt.close(fig)
+    logger.info(f"    Salvato SHAP_bar_{safe_name}.png")
+
+    # 3. Summary per singola classe
+    for class_idx, label in enumerate(labels):
+        shap.summary_plot(sv_list[class_idx], X_sample, feature_names=feat_labels,
+                          show=False, plot_size=None)
+        fig_c = plt.gcf()
+        ax_c = plt.gca()
+        ax_c.set_title(f"SHAP {model_name} — {label.capitalize()}", fontsize=13, pad=12)
+        ax_c.set_xlabel("Mean Absolute SHAP value", fontweight="bold", fontsize=11)
+        ax_c.tick_params(labelsize=10)
+        fig_c.set_size_inches(figsize)
+        plt.tight_layout()
+        plt.savefig(
+            os.path.join(fig_dir, f"SHAP_{safe_name}_class_{CLASS_NAMES.get(class_idx + 1)}.png"),
+            dpi=dpi,
+        )
+        plt.close("all")
+    logger.info(f"    Salvati plot SHAP per classe ({model_name}).")
+
+
+# ---------------------------------------------------------------------------
+# Confronto modelli
+# ---------------------------------------------------------------------------
+
+def plot_metrics_comparison(comparison: pd.DataFrame, config: dict):
+    """Grafico a barre orizzontali per ogni metrica, un file per metrica."""
+    setup_publication_style(config)
+    metrics = config["visualization"].get("comparison_metrics", ["accuracy"])
+    metrics = [m for m in metrics if m in comparison.columns]
+    if not metrics:
+        logger.warning("Nessuna metrica valida trovata per il confronto grafico.")
+        return
+
+    fig_dir = config["paths"]["figures_dir"]
+    subdir = os.path.join(fig_dir, "model_comparison")
+    os.makedirs(subdir, exist_ok=True)
+    dpi = config["visualization"]["dpi"]
+    figsize = config["visualization"]["figsize"]
+
+    models = comparison["Modello"].tolist()
+    n_models = len(models)
+    colors = [IEEE_PALETTE[i % len(IEEE_PALETTE)] for i in range(n_models)]
+
+    for metric in metrics:
+        fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+        values = comparison[metric].tolist()
+        bars = ax.barh(models[::-1], values[::-1], color=colors[::-1],
+                       edgecolor="#333333", linewidth=0.8)
+        for bar, value in zip(bars, values[::-1]):
+            ax.text(bar.get_width() + 0.004, bar.get_y() + bar.get_height() / 2,
+                    f"{value:.4f}", va="center", fontsize=9)
+        ax.set_xlabel(metric.replace("_", " ").capitalize(), fontweight="bold")
+        ax.set_title(f"Confronto {metric.replace('_', ' ').capitalize()} tra Modelli", pad=12)
+        ax.set_xlim(0, 1.08)
+        ax.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9", axis="x", zorder=0)
+        for bar in bars:
+            bar.set_zorder(2)
+        fig.tight_layout()
+        filename = f"model_{metric}_comparison.png"
+        fig.savefig(os.path.join(subdir, filename))
+        plt.close(fig)
+        logger.info(f"  Salvato {filename} in {str(subdir).replace(os.sep, '/')}")
+
+
+def plot_metric_groups_comparison(comparison: pd.DataFrame, config: dict):
+    """Grafico a barre raggruppate per modello con multiple metriche."""
+    setup_publication_style(config)
+    metrics = config["visualization"].get("comparison_group_metrics", ["accuracy"])
+    metrics = [m for m in metrics if m in comparison.columns]
+    if not metrics:
+        logger.warning("Nessuna metrica valida trovata per il confronto a gruppi.")
+        return
+
+    fig_dir = config["paths"]["figures_dir"]
+    subdir = os.path.join(fig_dir, "model_comparison")
+    os.makedirs(subdir, exist_ok=True)
+    dpi = config["visualization"]["dpi"]
+    figsize = config["visualization"]["figsize"]
+
+    models = comparison["Modello"].tolist()
+    n_models = len(models)
+    n_metrics = len(metrics)
+    x = np.arange(n_models)
+    width = 0.8 / n_metrics
+    colors = [IEEE_PALETTE[i % len(IEEE_PALETTE)] for i in range(n_metrics)]
+
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    for i, metric in enumerate(metrics):
+        values = comparison[metric].tolist()
+        ax.bar(x + i * width, values, width,
+               label=metric.replace("_", " ").capitalize(),
+               color=colors[i], edgecolor="#333333", linewidth=0.8, zorder=2)
+
+    ax.set_xticks(x + width * (n_metrics - 1) / 2)
+    ax.set_xticklabels(models, rotation=45, ha="right")
+    ax.set_ylabel("Valore", fontweight="bold")
+    ax.set_title("Confronto metriche per modello", pad=12)
+    ax.set_ylim(0, 1.05)
+    ax.legend(title="Metrica")
+    ax.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9", axis="y", zorder=0)
+    for i, metric in enumerate(metrics):
+        values = comparison[metric].tolist()
+        for j, value in enumerate(values):
+            ax.text(x[j] + i * width, value + 0.01, f"{value:.3f}",
+                    ha="center", va="bottom", fontsize=8)
+    fig.tight_layout()
+    filename = "model_comparison_groups.png"
+    fig.savefig(os.path.join(subdir, filename))
+    plt.close(fig)
+    logger.info(f"  Salvato {filename} in {str(subdir).replace(os.sep, '/')}")
+
+
+# ---------------------------------------------------------------------------
+# Cube separability 3D
+# ---------------------------------------------------------------------------
+
+def _ellipsoid_mesh(center, cov, n: int = 20, scale: float = 1.5):
+    """Mesh (x,y,z) per un ellissoide centrato su center con matrice di covarianza cov."""
+    if cov.shape != (3, 3):
+        cov = np.eye(3)
+    try:
+        eigvals, eigvecs = np.linalg.eigh(cov)
+        eigvals = np.maximum(eigvals, 1e-9)
+    except Exception:
+        eigvals = np.ones(3)
+        eigvecs = np.eye(3)
+
+    u = np.linspace(0, 2 * np.pi, n)
+    v = np.linspace(0, np.pi, n)
+    x = np.outer(np.cos(u), np.sin(v))
+    y = np.outer(np.sin(u), np.sin(v))
+    z = np.outer(np.ones_like(u), np.cos(v))
+
+    radii = np.sqrt(eigvals) * scale
+    points = np.stack([x.flatten(), y.flatten(), z.flatten()], axis=1)
+    points = (points * radii) @ eigvecs.T + center
+    return (points[:, 0].reshape((n, n)),
+            points[:, 1].reshape((n, n)),
+            points[:, 2].reshape((n, n)))
+
+
+def _safe_model_name(name: str) -> str:
+    return name.lower().replace(" ", "_").replace("(", "").replace(")", "")
+
+
+def plot_cube_separability(data: dict, all_results: dict, config: dict):
+    """Visualizza i modelli nello spazio 3D ridotto con separabilità inter/intra-classe."""
+    setup_publication_style(config)
+    fig_dir = config["paths"]["figures_dir"]
+    cube_dir = os.path.join(fig_dir, "cube_separability")
+    os.makedirs(cube_dir, exist_ok=True)
+    dpi = config["visualization"]["dpi"]
+    figsize = config["visualization"]["figsize"]
+    results_dir = config["paths"]["results_dir"]
+
+    X_test = data["X_test"]
+    y_test = data["y_test"]
+    labels = get_particle_labels(data["label_encoder"])
+
+    n_samples = len(y_test)
+    max_samples = min(500, n_samples)
+    rng = np.random.default_rng(42)
+    if n_samples > max_samples:
+        # Campionamento stratificato: ogni classe è rappresentata proporzionalmente
+        classes, class_counts = np.unique(y_test, return_counts=True)
+        per_class = np.maximum(1, (class_counts / n_samples * max_samples).astype(int))
+        # Aggiusta per arrivare esattamente a max_samples
+        diff = max_samples - per_class.sum()
+        per_class[np.argsort(class_counts)[-abs(diff):]] += np.sign(diff)
+        idx_parts = []
+        for c, n_c in zip(classes, per_class):
+            c_idx = np.where(y_test == c)[0]
+            chosen = rng.choice(c_idx, size=int(n_c), replace=False)
+            idx_parts.append(chosen)
+        sample_idx = np.concatenate(idx_parts)
+        rng.shuffle(sample_idx)
+        X_vis = X_test[sample_idx]
+        y_vis = y_test[sample_idx]
+    else:
+        sample_idx = np.arange(n_samples)
+        X_vis = X_test
+        y_vis = y_test
+
+    if X_vis.shape[1] >= 3:
+        f_vals, _ = f_classif(X_vis, y_vis)
+        top3_idx = np.argsort(f_vals)[::-1][:3]
+    else:
+        top3_idx = np.arange(X_vis.shape[1])
+    selected_features = [data["feature_names"][i] for i in top3_idx]
+    X3 = X_vis[:, top3_idx]
+
+    mins, maxs = X3.min(axis=0), X3.max(axis=0)
+    span = max(maxs - mins)
+    center_cube = (mins + maxs) / 2
+    cube_min = center_cube - span / 2
+    cube_max = center_cube + span / 2
+
+    report_lines = []
+    fixed_elev, fixed_azim = 30, 45
+
+    for name, res in all_results.items():
+        y_pred = np.asarray(res["y_pred"])
+        y_pred_vis = y_pred[sample_idx]
+
+        fig = plt.figure(figsize=figsize, dpi=dpi)
+        ax = fig.add_subplot(111, projection="3d")
+
+        intra_dists, centroids = [], []
+        class_idxs = np.unique(y_vis)
+
+        for c in class_idxs:
+            idx = np.where(y_pred_vis == c)[0]
+            if len(idx) == 0:
+                continue
+            points = X3[idx]
+            centroid = points.mean(axis=0)
+            centroids.append(centroid)
+            intra = np.mean(pairwise_distances(points)) if len(points) > 1 else 0.0
+            intra_dists.append(intra)
+            ax.scatter3D(points[:, 0], points[:, 1], points[:, 2],  # type: ignore
+                         label=f"{labels[c].capitalize()} (pred)",
+                         color=IEEE_PALETTE[int(c) % len(IEEE_PALETTE)],
+                         s=20, alpha=0.6, edgecolor="w")
+
+        inter = np.mean(pairwise_distances(np.vstack(centroids))) if len(centroids) > 1 else 0.0
+        avg_intra = float(np.mean(intra_dists)) if intra_dists else 0.0
+
+        for c in class_idxs:
+            true_pts = X3[np.where(y_vis == c)[0]]
+            ax.scatter3D(true_pts[:, 0], true_pts[:, 1], true_pts[:, 2],  # type: ignore
+                         color="black", marker="x", s=8, alpha=0.25, label=None)
+
+        ax.set_title(
+            f"Cube 3D su feature selezionate: {name.title()}\n"
+            f"Inter-class dist={inter:.3f}, Intra-class dist={avg_intra:.3f}",
+            fontsize=11,
+        )
+        ax.set_xlabel(selected_features[0])
+        ax.set_ylabel(selected_features[1] if len(selected_features) > 1 else "Feature-2")
+        ax.set_zlabel(selected_features[2] if len(selected_features) > 2 else "Feature-3")
+        ax.set_xlim(cube_min[0], cube_max[0])
+        ax.set_ylim(cube_min[1], cube_max[1])
+        ax.set_zlim(cube_min[2], cube_max[2])
+        ax.view_init(elev=fixed_elev, azim=fixed_azim)
+        ax.legend(fontsize=9, loc="upper left")
+        fig.tight_layout()
+
+        filename = f"cube_separability_{_safe_model_name(name)}.png"
+        fig.savefig(os.path.join(cube_dir, filename))
+        plt.close(fig)
+
+        # Plotly interattivo
+        html_filename = os.path.join(cube_dir, f"cube_separability_{_safe_model_name(name)}.html")
+        css_name = f"cube_separability_{_safe_model_name(name)}.css"
+        css_path = os.path.join(cube_dir, css_name)
+        if not os.path.exists(css_path):
+            with open(css_path, "w", encoding="utf-8") as css:
+                css.write("body { font-family: Arial, sans-serif; margin: 20px; background-color: #f8f9fa; }\n")
+                css.write("h1 { color: #333; font-size: 1.4rem; }\n")
+                css.write(".msg { margin: 16px 0; color: #333; }\n")
+                css.write("img.cube_img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }\n")
+                css.write(".plotly-wrapper { width: 100%; height: 100%; overflow: auto; }\n")
+
+        if go is not None:
+            figly = go.Figure()
+            for c in class_idxs:
+                idx = np.where(y_pred_vis == c)[0]
+                if len(idx) == 0:
+                    continue
+                pts = X3[idx]
+                color = IEEE_PALETTE[int(c) % len(IEEE_PALETTE)]
+                figly.add_trace(go.Scatter3d(
+                    x=pts[:, 0], y=pts[:, 1], z=pts[:, 2],
+                    mode="markers",
+                    marker=dict(size=3, opacity=0.7, color=color),
+                    name=f"{labels[c].capitalize()} (pred)",
+                ))
+                cov = np.cov(pts, rowvar=False) if len(pts) > 2 else np.eye(3)
+                cent = pts.mean(axis=0)
+                ellx, elly, ellz = _ellipsoid_mesh(cent, cov, n=22, scale=1.5)
+                figly.add_trace(go.Mesh3d(
+                    x=ellx.flatten(), y=elly.flatten(), z=ellz.flatten(),
+                    opacity=0.2, color=color,
+                    name=f"{labels[c].capitalize()} ellissoide",
+                    showscale=False,
+                ))
+
+            figly.update_layout(
+                scene=dict(
+                    xaxis_title=selected_features[0],
+                    yaxis_title=selected_features[1] if len(selected_features) > 1 else "Feature-2",
+                    zaxis_title=selected_features[2] if len(selected_features) > 2 else "Feature-3",
+                    aspectmode="cube",
+                ),
+                title=f"Cube 3D Interattivo: {_safe_model_name(name)}",
+                legend=dict(font=dict(size=10)),
+            )
+            plotly_div = figly.to_html(full_html=False, include_plotlyjs="cdn")
+            with open(html_filename, "w", encoding="utf-8") as f:
+                f.write(f'<!DOCTYPE html>\n<html lang="it">\n<head>\n'
+                        f'  <meta charset="utf-8" />\n'
+                        f'  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n'
+                        f'  <title>Cube 3D Interattivo - {_safe_model_name(name)}</title>\n'
+                        f'  <link rel="stylesheet" href="{css_name}" />\n'
+                        f'</head>\n<body>\n<h1>Cube 3D Interattivo</h1>\n'
+                        f'<div class="plotly-wrapper">\n{plotly_div}\n</div>\n</body>\n</html>\n')
+            logger.info(f"  Salvato interattivo plotly in {str(html_filename).replace(os.sep, '/')}")
+        else:
+            img_name = os.path.basename(filename)
+            with open(html_filename, "w", encoding="utf-8") as f:
+                f.write(f'<!DOCTYPE html>\n<html lang="it">\n<head>\n'
+                        f'  <meta charset="utf-8" />\n'
+                        f'  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n'
+                        f'  <title>Cube 3D - {_safe_model_name(name)}</title>\n'
+                        f'  <link rel="stylesheet" href="{css_name}" />\n'
+                        f'</head>\n<body>\n<h1>Cube 3D (solo immagine)</h1>\n'
+                        f'<p class="msg">Installare plotly per la versione interattiva: python -m pip install plotly</p>\n'
+                        f'<img class="cube_img" src="{img_name}" alt="cube" />\n'
+                        f'</body>\n</html>\n')
+            logger.info(f"  Plotly non disponibile. Creato fallback HTML: {str(html_filename).replace(os.sep, '/')}")
+
+        report_lines.append(
+            f"{name}: inter={inter:.4f}, intra={avg_intra:.4f}, n_samples={len(y_test)}"
+        )
+
+    summary_path = os.path.join(results_dir, "cube_separability.txt")
+    with open(summary_path, "w", encoding="utf-8") as f:
+        f.write("Cube Separability\n" + "=" * 55 + "\n" + "\n".join(report_lines))
+    logger.info(f"  Salvato cube separability in {str(fig_dir).replace(os.sep, '/')}")
+
+
+# ---------------------------------------------------------------------------
+# Baseline
+# ---------------------------------------------------------------------------
+
+def plot_baseline_ranges(class_names: list, ranges: list,
+                         feature_names: list, config: dict):
+    """Tabella dei range calcolati attraverso i percentili (baseline cuts)."""
+    setup_publication_style(config)
+    fig_path = config["paths"]["figures_dir"]
+    fig_dir = os.path.join(fig_path, "baseline")
+    os.makedirs(fig_dir, exist_ok=True)
+    dpi = config["visualization"]["dpi"]
+
+    headers = ["Classe"] + [FEATURE_NAMES.get(n, n) for n in feature_names]
+    table_data = []
+    for class_id, cname in enumerate(class_names):
+        row = [cname]
+        for j in range(len(feature_names)):
+            low, high = ranges[class_id][j]
+            row.append(f"{low:.3f} – {high:.3f}")
+        table_data.append(row)
+
+    fig, ax = plt.subplots(
+        figsize=(max(10, len(feature_names) * 1.8), max(2.5, len(class_names) * 0.9)),
+        dpi=dpi,
+    )
+    ax.axis("off")
+    fig.patch.set_facecolor("white")
+
+    header_color = IEEE_PALETTE[0]
+    table = ax.table(
+        cellText=table_data,
+        colLabels=headers,
+        cellLoc="center",
+        loc="center",
+        colLoc="center",
+        colColours=[header_color] + ["#f7f7f7"] * len(feature_names),
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(11)
+    table.scale(1, 1.8)
+
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_text_props(weight="bold", color="white")
+            cell.set_facecolor(header_color)
+        else:
+            cell.set_linewidth(0.5)
+            cell.set_edgecolor("#dddddd")
+
+    ax.set_title("Tabella dei range calcolati attraverso i percentili (baseline cuts)", fontsize=16, pad=20)
+    fig.tight_layout()
+    fig.savefig(os.path.join(fig_dir, "range_features.png"),
+                bbox_inches="tight", facecolor=fig.get_facecolor())
+    plt.close(fig)
+    logger.info(f"  Salvato range_features.png in {str(fig_dir).replace(os.sep, '/')}")

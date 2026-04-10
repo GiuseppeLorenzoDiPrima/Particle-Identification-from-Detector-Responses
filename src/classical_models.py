@@ -191,53 +191,7 @@ def train_and_evaluate(data: dict, config: dict) -> dict:
 
 def plot_feature_importance(results: dict, feature_names: list, config: dict):
     """Grafico della feature importance per i modelli che la supportano."""
-    import matplotlib.pyplot as plt
-    import os
-    
-    # Mappa i nomi delle feature: nome -> simbolo per visualizzazione matplotlib
-    FEATURE_NAMES = {
-        "p": r"$p$",
-        "theta": r"$\theta$",
-        "beta": r"$\beta$",
-        "nphe": r"$n_{phe}$",
-        "ein": r"$E_{in}$",
-        "eout": r"$E_{out}$"
-    }
-
-    fig_path = config["paths"]["figures_dir"]
-    os.makedirs(fig_path, exist_ok=True)
-    fig_dir = fig_path + "/training"
-    os.makedirs(fig_dir, exist_ok=True)
-    dpi = config["visualization"]["dpi"]
-
-    models_with_fi = {
-        name: res["feature_importance"]
-        for name, res in results.items()
-        if res["feature_importance"] is not None
-    }
-
-    if not models_with_fi:
-        return
-
-    n = len(models_with_fi)
-    fig, axes = plt.subplots(1, n, figsize=(6 * n, 5), dpi=dpi)
-    if n == 1:
-        axes = [axes]
-
-    for ax, (name, fi) in zip(axes, models_with_fi.items()):
-        sorted_fi = sorted(fi.items(), key=lambda x: x[1], reverse=True)
-        names = [x[0] for x in sorted_fi]
-        names = [FEATURE_NAMES.get(name, name) for name in names]
-        values = [x[1] for x in sorted_fi]
-        ax.barh(names[::-1], values[::-1])
-        ax.set_title(f"Feature Importance\n{name}", fontsize=11)
-        ax.set_xlabel("Importanza")
-
-    fig.tight_layout()
-    
+    from src.visualization import plot_feature_importance as _plot
     print()
     logger.info("Creazione grafico feature importance...")
-    
-    fig.savefig(os.path.join(fig_dir, "feature_importance.png"))
-    plt.close(fig)
-    logger.info("  Salvato feature_importance.png")
+    _plot(results, feature_names, config)

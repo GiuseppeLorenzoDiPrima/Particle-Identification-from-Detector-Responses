@@ -29,7 +29,7 @@ import time
 
 from src.data_loader import load_config, load_and_preprocess
 from src.visualization import (
-    setup_style,
+    setup_publication_style,
     plot_bethe_bloch,
     plot_feature_distributions,
     plot_class_distribution,
@@ -150,7 +150,7 @@ def main():
         logger.info("=" * 55)
 
         data = load_and_preprocess(config)
-        setup_style(config)
+        setup_publication_style(config)
 
         if config["visualization"].get("graph", True):
             print()
