@@ -43,7 +43,7 @@ baseline_cuts:
 classical_models:
   logistic_regression:
     enabled: true
-    max_iter: 1000
+    max_iter: 1500
     multi_class: "multinomial"
     solver: "lbfgs"
     class_weight: "balanced"
@@ -52,18 +52,18 @@ classical_models:
     n_neighbors: 7
   decision_tree:
     enabled: true
-    max_depth: 10
+    max_depth: 15
     class_weight: "balanced"
   random_forest:
     enabled: true
-    n_estimators: 200
+    n_estimators: 300
     max_depth: 15
     n_jobs: -1
     class_weight: "balanced"
   xgboost:
     enabled: true
     n_estimators: 300
-    max_depth: 6
+    max_depth: 15
     learning_rate: 0.1
     n_jobs: -1
     eval_metric: "mlogloss"
@@ -77,11 +77,11 @@ cross_validation:
 
 # --- Deep Learning (MLP) ---
 deep_learning:
-  hidden_layers: [64, 128, 256, 64]   # Architettura MLP
+  hidden_layers: [64, 128, 256, 128]  # Architettura MLP
   dropout: 0.3                        # Dropout per regolarizzazione
   learning_rate: 0.001                # Learning rate per ottimizzazione
   batch_size: 512                     # Dimensione del batch
-  epochs: 350                         # Numero massimo di epoche
+  epochs: 100                         # Numero massimo di epoche
   early_stopping_patience: 20         # Pazienza per early stopping
   weight_decay: 0.0001                # Learning rate decay (L2 regularization)
   show_architecture: true
@@ -89,12 +89,12 @@ deep_learning:
 # --- Interpretabilità (SHAP) ---
 interpretability:
   enabled: true
-  shap_samples: 1000                  # Numero di campioni per calcolo SHAP values
+  shap_samples: 1500                  # Numero di campioni per calcolo SHAP values
 
 # --- Uncertainty Quantification ---
 uncertainty:
   enabled: true
-  mc_dropout_iterations: 50           # Numero di forward pass per MC Dropout
+  mc_dropout_iterations: 100           # Numero di forward pass per MC Dropout
 
 # --- Visualizzazione ---
 visualization:

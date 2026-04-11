@@ -579,6 +579,7 @@ def plot_shap_results(sv_list, X_sample, feature_names: list, labels: list,
     capitalized_labels = [l.capitalize() for l in labels]
 
     # 1. Summary aggregato
+    figsize_1 = (6, 4)  # Plot più compatti per classe
     shap.summary_plot(sv_list, X_sample, feature_names=feat_labels,
                       class_names=capitalized_labels, show=False, plot_size=None)
     fig_s = plt.gcf()
@@ -590,7 +591,7 @@ def plot_shap_results(sv_list, X_sample, feature_names: list, labels: list,
     if leg is not None:
         for text in leg.get_texts():
             text.set_fontsize(10)
-    fig_s.set_size_inches(figsize)
+    fig_s.set_size_inches(figsize_1)
     plt.tight_layout()
     plt.savefig(os.path.join(fig_dir, f"SHAP_summary_{safe_name}.png"), dpi=dpi)
     plt.close("all")
@@ -613,17 +614,15 @@ def plot_shap_results(sv_list, X_sample, feature_names: list, labels: list,
     logger.info(f"    Salvato SHAP_bar_{safe_name}.png")
 
     # 3. Summary per singola classe
-    figsize = (10, 6)  # Plot più compatti per classe
-    
     for class_idx, label in enumerate(labels):
         shap.summary_plot(sv_list[class_idx], X_sample, feature_names=feat_labels,
-                          show=False, plot_size=None, dot_size=12)
+                          show=False, plot_size=None)
         fig_c = plt.gcf()
         ax_c = plt.gca()
         ax_c.set_title(f"SHAP {model_name} — {label.capitalize()}", fontsize=13, pad=12)
         ax_c.set_xlabel("Mean Absolute SHAP value", fontweight="bold", fontsize=11)
         ax_c.tick_params(labelsize=10)
-        fig_c.set_size_inches(figsize)
+        fig_c.set_size_inches(figsize_1)
         plt.tight_layout()
         plt.savefig(
             os.path.join(fig_dir, f"SHAP_{safe_name}_class_{CLASS_NAMES.get(class_idx + 1)}.png"),
@@ -846,9 +845,11 @@ def plot_cube_separability(data: dict, all_results: dict, config: dict):
             true_pts = X3[np.where(y_vis == c)[0]]
             ax.scatter3D(true_pts[:, 0], true_pts[:, 1], true_pts[:, 2],  # type: ignore
                          color="black", marker="x", s=8, alpha=0.25, label=None)
-
+        
+        formatted = name.title()
+        formatted = 'K-NN' if formatted == 'K-Nn' else formatted
         ax.set_title(
-            f"Cube 3D su feature selezionate: {name.title() if name.title() != 'K-Nn' else 'K-NN'}\n"
+            f"Cube 3D su feature selezionate: {formatted}\n"
             f"Inter-class dist={inter:.3f}, Intra-class dist={avg_intra:.3f}",
             fontsize=11,
         )

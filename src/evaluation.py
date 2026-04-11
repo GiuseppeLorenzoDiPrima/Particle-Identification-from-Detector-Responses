@@ -151,9 +151,9 @@ def generate_full_report(all_results: dict, data: dict, config: dict):
     # --- Model comparison report in formato text ---
     summary_path = os.path.join(results_dir, "report_model_comparison.txt")
     with open(summary_path, "w") as f:
-        f.write("=" * 17 + "\n")
-        f.write("Model Comparison\n")
-        f.write("=" * 17 + "\n")
+        f.write("=" * 20 + "\n")
+        f.write("  Model Comparison\n")
+        f.write("=" * 20 + "\n")
         f.write(comparison.to_string(index=False))
     logger.info(f"Report di confronto testuale salvato in {str(summary_path).replace(os.sep, '/')}")
 
