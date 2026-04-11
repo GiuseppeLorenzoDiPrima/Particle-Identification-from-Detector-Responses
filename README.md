@@ -16,7 +16,7 @@ Pipeline completa per Particle IDentification (PID) basata su:
 Obiettivo: dimostrare il vantaggio quantitativo del ML rispetto ai cut-based methods.
 
 ---
-## Introduction
+## Introduzione
 Benvenuta/o. Il presente progetto è stato sviluppato nell’ambito della preparazione all’esame di Principi di Calcolo Tensoriale, previsto dal piano di studi del Corso di Dottorato di Ricerca in Sistemi Intelligenti per l’Ingegneria presso l’Università degli Studi di Enna Kore.
 
 L’elaborato propone l’applicazione di tecniche di Machine Learning e Deep Learning al contesto della fisica delle particelle. In particolare, il problema affrontato riguarda la classificazione multi-classe: l’obiettivo consiste nell’identificare la natura di una particella in ingresso (tra elettrone, pione, kaone e protone) sulla base di sei risposte simulate attraverso il metodo Monte Carlo (simulazione di sei rivelatori).
@@ -25,7 +25,7 @@ I dati utilizzati provengono dalla piattaforma Open-Source [Kaggle](https://www.
 
 A tal fine, vengono messi a confronto l’approccio tradizionale, basato su tagli selettivi (range percentili), e modelli avanzati di apprendimento automatico e profondo, al fine di valutarne le prestazioni e l’efficacia nel contesto considerato.
 
-## Results (Best Model)
+## Resultati ottenuti (miglior modello)
 ✔ XGBoost si attesta come miglior modello, superando le performance dei metodi tradizionali del circa 50% in termini di accuratezza:
 
 | Metric | Value |
@@ -35,8 +35,6 @@ A tal fine, vengono messi a confronto l’approccio tradizionale, basato su tagl
 | Recall (macro) | 0.8406 |
 | F1-Score (macro) | 0.8625 |
 | AUC ROC (macro) | 0.9951 |
-
-## Results
 
 <p align="center">
   <img src="github_icon\bethe_bloch.png" height="220" width="45%">
@@ -73,6 +71,8 @@ Per garantire la riproducibilità del progetto, tutti gli esperimenti sono stati
 5. [Le 6 fasi della pipeline](#5-le-6-fasi-della-pipeline)
 6. [Configurazione](#6-configurazione)
 7. [Output prodotti](#7-output-prodotti)
+8. [Licenza MIT](#8-license)
+9. [Contatti](#9-contatti)
 
 ---
 
@@ -245,7 +245,7 @@ python main.py --config mia_config.yaml
 
 ---
 
-## 5. Struttura del progetto
+## 4. Struttura del progetto
 
 ```
 Particle-Identification-from-Detector-Responses/
@@ -283,7 +283,7 @@ Particle-Identification-from-Detector-Responses/
 
 ---
 
-## 6. Le 6 fasi della pipeline
+## 5. Le 6 fasi della pipeline
 
 ### Fase 1 - Caricamento dati e visualizzazione esplorativa
 
@@ -332,7 +332,7 @@ Particle-Identification-from-Detector-Responses/
 
 ---
 
-## 7. Configurazione
+## 6. Configurazione
 
 Tutti i parametri sono configurati in **`config.yaml`**. È possibile modificarli senza alterare il codice. Alcune della sezioni principali:
 
@@ -366,7 +366,7 @@ dataset:
 
 ---
 
-## 8. Output prodotti
+## 7. Output prodotti
 
 Dopo un'esecuzione della papeline (completa o rapida), alcuni degli elementi generati in `outputs/` sono:
 
@@ -417,14 +417,14 @@ Dopo un'esecuzione della papeline (completa o rapida), alcuni degli elementi gen
 
 ---
 
-## Licence
+## 8. License
 
 **🔓 MIT License**  
 Questo progetto è distribuito sotto licenza MIT, una licenza open source semplice e permissiva che consente a chiunque di utilizzare, modificare e distribuire il codice liberamente. È possibile impiegare questo software anche per scopi commerciali, a condizione che venga inclusa la nota di copyright originale. L'autore sarebbe lieto di essere citato qualora questo progetto venga riutilizzato.
 
 ---
 
-## Contatti
+## 9. Contatti
 
 **👤 Giuseppe Lorenzo Di Prima**
 ORCID: [Giuseppe Lorenzo Di Prima](https://orcid.org/0009-0002-9470-9370)
