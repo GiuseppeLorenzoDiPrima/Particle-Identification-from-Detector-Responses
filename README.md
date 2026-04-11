@@ -128,13 +128,13 @@ Pipeline completa per Particle IDentification (PID) basata su:
 
 ##### Key Insights
 
-✔ XGBoost si attesta come miglior modello, superando le performance dei metodi tradizionali del circa 53% in termini di accuratezza.
-✔ I modelli tree-based (XGBoost, Random Forest, Decision Tree) superano la baseline in accuratezza del ~50%
-✔ Le feature più discriminanti sono: velocità ridotta e quantità di moto
-✔ L'incertezza (MC Dropout) evidenzia il l'andamento dell'accuratezza man mano vengono scartati eventi incerti
+- XGBoost si attesta come miglior modello, superando le performance dei metodi tradizionali del circa 53% in termini di accuratezza.
+- I modelli tree-based (XGBoost, Random Forest, Decision Tree) superano la baseline in accuratezza del ~50%
+- Le feature più discriminanti sono: velocità ridotta e quantità di moto
+- L'incertezza (MC Dropout) evidenzia l'andamento dell'accuratezza man mano vengono scartati eventi incerti
 
 ##### Reproducibility
-Per garantire la riproducibilità del progetto, tutti gli esperimenti sono stati condotto con un seed rand fisso (default: 42).
+Per garantire la riproducibilità del progetto, tutti gli esperimenti sono stati condotto con un seed fisso (default: 42).
 
 ---
 ## Introduzione
@@ -512,4 +512,4 @@ Questo progetto è distribuito sotto licenza MIT, una licenza open source sempli
 
 ## 9. Contatti
 
-**👤 Giuseppe Lorenzo Di Prima**<br>ORCID: [Giuseppe Lorenzo Di Prima](https://orcid.org/0009-0002-9470-9370)<br>🎓 Ph.D. in Sistemi Intelligenti per l’Ingegneria<br>[🏫 Università degli Studi di Enna Kore, Italy](https://www.uke.it)<br>✉️ [giuseppelorenzo.diprima@unikorestudent.it](mailto:giuseppelorenzo.diprima@unikorestudent.it)
+**👤 Giuseppe Lorenzo Di Prima**, ORCID: [Giuseppe Lorenzo Di Prima](https://orcid.org/0009-0002-9470-9370)<br>🎓 Ph.D. in Sistemi Intelligenti per l’Ingegneria<br>[🏫 Università degli Studi di Enna Kore, Italy](https://www.uke.it)<br>✉️ [giuseppelorenzo.diprima@unikorestudent.it](mailto:giuseppelorenzo.diprima@unikorestudent.it)
