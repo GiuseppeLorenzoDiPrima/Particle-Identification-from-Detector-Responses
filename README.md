@@ -1,7 +1,7 @@
 # Particle Identification via Machine Learning
 ## Machine Learning applicato alla Fisica delle Particelle
 
-> Multi-class classification of particles (e, K, π, p) using MC Simulated detector responses and Machine Learning / Deep Learning models.
+> Classificazione multi-classe di particelle (e, K, π, p) attraverso l'utilizzo di risposte di rivelatori simulate con metodo Monte Carlo. Applicazione di modelli di Machine Learning e Deep Learning.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-DeepLearning-red)
@@ -13,28 +13,104 @@ Pipeline completa per Particle IDentification (PID) basata su:
 - Confronto tra approccio fisico tradizionale e ML/DL
 - Miglior modello: XGBoost con accuracy ~97.10%
 
-Obiettivo: dimostrare il vantaggio quantitativo del ML rispetto ai cut-based methods.
+###### **Obiettivo: dimostrare il vantaggio quantitativo del ML rispetto all'approccio cut-based**.
 
----
-## Introduzione
-Benvenuta/o. Il presente progetto è stato sviluppato nell’ambito della preparazione all’esame di Principi di Calcolo Tensoriale, previsto dal piano di studi del Corso di Dottorato di Ricerca in Sistemi Intelligenti per l’Ingegneria presso l’Università degli Studi di Enna Kore.
+##### Risultati ottenuti
 
-L’elaborato propone l’applicazione di tecniche di Machine Learning e Deep Learning al contesto della fisica delle particelle. In particolare, il problema affrontato riguarda la classificazione multi-classe: l’obiettivo consiste nell’identificare la natura di una particella in ingresso (tra elettrone, pione, kaone e protone) sulla base di sei risposte simulate attraverso il metodo Monte Carlo (simulazione di sei rivelatori).
+<div align="center">
 
-I dati utilizzati provengono dalla piattaforma Open-Source [Kaggle](https://www.kaggle.com/database/naharrison/particle-identification-from-detector-responses) e consistono in 5 milioni di samples, ciascuno descritto da sei features. Tali dati sono stati generati mediante simulazioni basate sul metodo Monte Carlo.
+<table>
+  <tr>
+    <th>Modello</th>
+    <th>Accuracy</th>
+    <th>F1 Macro</th>
+    <th>Precision Macro</th>
+    <th>Recall Macro</th>
+    <th>AUC ROC Macro</th>
+    <th>CV Accuracy</th>
+    <th>Train Time (s)</th>
+  </tr>
 
-A tal fine, vengono messi a confronto l’approccio tradizionale, basato su tagli selettivi (range percentili), e modelli avanzati di apprendimento automatico e profondo, al fine di valutarne le prestazioni e l’efficacia nel contesto considerato.
+  <tr>
+    <td>XGBoost</td>
+    <td>0.9710</td>
+    <td>0.8625</td>
+    <td>0.8880</td>
+    <td>0.8406</td>
+    <td>0.9951</td>
+    <td>0.9711</td>
+    <td>317.90</td>
+  </tr>
 
-## Resultati ottenuti (miglior modello)
-✔ XGBoost si attesta come miglior modello, superando le performance dei metodi tradizionali del circa 50% in termini di accuratezza:
+  <tr>
+    <td>K-NN</td>
+    <td>0.9681</td>
+    <td>0.8468</td>
+    <td>0.8843</td>
+    <td>0.8172</td>
+    <td>0.9680</td>
+    <td>0.9679</td>
+    <td>16.50</td>
+  </tr>
 
-| Metric | Value |
-|------|------|
-| Accuracy | 0.9710 |
-| Precision (macro) | 0.8880 |
-| Recall (macro) | 0.8406 |
-| F1-Score (macro) | 0.8625 |
-| AUC ROC (macro) | 0.9951 |
+  <tr>
+    <td>Random Forest</td>
+    <td>0.9475</td>
+    <td>0.7828</td>
+    <td>0.7165</td>
+    <td>0.9375</td>
+    <td>0.9946</td>
+    <td>0.9483</td>
+    <td>724.30</td>
+  </tr>
+
+  <tr>
+    <td>Decision Tree</td>
+    <td>0.9398</td>
+    <td>0.7402</td>
+    <td>0.6792</td>
+    <td>0.9313</td>
+    <td>0.9757</td>
+    <td>0.9404</td>
+    <td>70.10</td>
+  </tr>
+
+  <tr>
+    <td>MLP (PyTorch)</td>
+    <td>0.9249</td>
+    <td>0.6954</td>
+    <td>0.6463</td>
+    <td>0.9430</td>
+    <td>0.9942</td>
+    <td>—</td>
+    <td>10307.70</td>
+  </tr>
+
+  <tr>
+    <td>Logistic Regression</td>
+    <td>0.8062</td>
+    <td>0.5555</td>
+    <td>0.5562</td>
+    <td>0.8385</td>
+    <td>0.9614</td>
+    <td>0.8062</td>
+    <td>32.90</td>
+  </tr>
+
+  <tr>
+    <td>Cuts-Based PID</td>
+    <td>0.4433</td>
+    <td>0.3272</td>
+    <td>0.4474</td>
+    <td>0.5520</td>
+    <td>—</td>
+    <td>—</td>
+    <td>—</td>
+  </tr>
+
+</table>
+
+</div>
 
 <p align="center">
   <img src="github_icon\bethe_bloch.png" height="220" width="45%">
@@ -50,15 +126,25 @@ A tal fine, vengono messi a confronto l’approccio tradizionale, basato su tagl
   <em>Top row: Bethe-Bloch and Correlation Matrix. Bottom row: Model Comparison and SHAP Summary (XGBoost).</em>
 </p>
 
+##### Key Insights
 
-## Key Insights
+✔ XGBoost si attesta come miglior modello, superando le performance dei metodi tradizionali del circa 53% in termini di accuratezza.
+✔ I modelli tree-based (XGBoost, Random Forest, Decision Tree) superano la baseline in accuratezza del ~50%
+✔ Le feature più discriminanti sono: velocità ridotta e quantità di moto
+✔ L'incertezza (MC Dropout) evidenzia il l'andamento dell'accuratezza man mano vengono scartati eventi incerti
 
-- I modelli tree-based (XGBoost, Random Forest, Decision Tree) superano la baseline in accuratezza del ~50%
-- Le feature più discriminanti sono: velocità ridotta e quantità di moto
-- L'incertezza (MC Dropout) evidenzia il l'andamento dell'accuratezza man mano vengono scartati eventi incerti
+##### Reproducibility
+Per garantire la riproducibilità del progetto, tutti gli esperimenti sono stati condotto con un seed rand fisso (default: 42).
 
-## Reproducibility
-Per garantire la riproducibilità del progetto, tutti gli esperimenti sono stati condotto con un seed fisso (default: 42).
+---
+## Introduzione
+Benvenuta/o. Il presente progetto è stato sviluppato nell’ambito della preparazione all’esame di Principi di Calcolo Tensoriale, previsto dal piano di studi del Corso di Dottorato di Ricerca in Sistemi Intelligenti per l’Ingegneria presso l’Università degli Studi di Enna Kore.
+
+L’elaborato propone l’applicazione di tecniche di Machine Learning e Deep Learning al contesto della fisica delle particelle. In particolare, il problema affrontato riguarda la classificazione multi-classe: l’obiettivo consiste nell’identificare la natura di una particella in ingresso (tra elettrone, pione, kaone e protone) sulla base di sei risposte simulate attraverso il metodo Monte Carlo (simulazione di sei rivelatori).
+
+I dati utilizzati provengono dalla piattaforma Open-Source [Kaggle](https://www.kaggle.com/database/naharrison/particle-identification-from-detector-responses) e consistono in 5 milioni di samples, ciascuno descritto da sei features. Tali dati sono stati generati mediante simulazioni basate sul metodo Monte Carlo.
+
+A tal fine, vengono messi a confronto l’approccio tradizionale, basato su tagli selettivi (range percentili), e modelli avanzati di apprendimento automatico e profondo, al fine di valutarne le prestazioni e l’efficacia nel contesto considerato.
 
 ---
 
@@ -426,8 +512,4 @@ Questo progetto è distribuito sotto licenza MIT, una licenza open source sempli
 
 ## 9. Contatti
 
-**👤 Giuseppe Lorenzo Di Prima**
-ORCID: [Giuseppe Lorenzo Di Prima](https://orcid.org/0009-0002-9470-9370)
-🎓 Ph.D. in Sistemi Intelligenti per l’Ingegneria  
-[🏫 Università degli Studi di Enna Kore, Italy](https://www.uke.it)  
-✉️ [giuseppelorenzo.diprima@unikorestudent.it](mailto:giuseppelorenzo.diprima@unikorestudent.it)
+**👤 Giuseppe Lorenzo Di Prima**<br>ORCID: [Giuseppe Lorenzo Di Prima](https://orcid.org/0009-0002-9470-9370)<br>🎓 Ph.D. in Sistemi Intelligenti per l’Ingegneria<br>[🏫 Università degli Studi di Enna Kore, Italy](https://www.uke.it)<br>✉️ [giuseppelorenzo.diprima@unikorestudent.it](mailto:giuseppelorenzo.diprima@unikorestudent.it)
