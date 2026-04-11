@@ -39,13 +39,13 @@ A tal fine, vengono messi a confronto l’approccio tradizionale, basato su tagl
 ## Results
 
 <p align="center">
-  <img src="github_icon\bethe_bloch.png" width="45%">
-  <img src="github_icon\correlation_matrix.png" width="45%">
+  <img src="github_icon\bethe_bloch.png" height="220" width="45%">
+  <img src="github_icon\correlation_matrix.png" height="220" width="45%">
 </p>
 
 <p align="center">
-  <img src="github_icon\model_comparison_groups.png" width="45%">
-  <img src="github_icon\SHAP_summary_xgboost.png" width="45%">
+  <img src="github_icon\model_comparison_groups.png" height="220" width="45%">
+  <img src="github_icon\SHAP_summary_xgboost.png" height="220" width="45%">
 </p>
 
 <p align="center">
