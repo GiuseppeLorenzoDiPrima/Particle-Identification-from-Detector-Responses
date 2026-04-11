@@ -91,7 +91,7 @@ def parse_args():
         description="Particle Identification - ML Pipeline"
     )
     parser.add_argument(
-        "--config", type=str, default="config.yaml",
+        "--config", type=str, default="config/config.yaml",
         help="Percorso al file di configurazione YAML",
     )
     parser.add_argument(

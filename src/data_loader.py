@@ -42,7 +42,7 @@ FEATURE_NAMES = {
 }
 
 
-def load_config(config_path: str = "config.yaml") -> dict:
+def load_config(config_path: str = "config/config.yaml") -> dict:
     """Carica la configurazione dal file YAML."""
     with open(config_path, "r") as f:
         return yaml.safe_load(f)

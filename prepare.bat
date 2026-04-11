@@ -23,7 +23,7 @@ if not exist ".venv" (
 
 REM --- Attivazione ---
 echo [2/3] Attivazione venv...
-.venv\Scripts\Activate.ps1 
+call .venv\Scripts\Activate.ps1 
 
 REM --- Installazione dipendenze ---
 echo [3/3] Installazione dipendenze da requirements.txt...

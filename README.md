@@ -337,7 +337,8 @@ python main.py --config mia_config.yaml
 Particle-Identification-from-Detector-Responses/
 │
 ├── main.py                  # Entry point
-├── config.yaml              # Configurazione centralizzata
+├── config/
+│   └── config.yaml          # Configurazione centralizzata
 ├── requirements.txt         # Dipendenze Python
 ├── prepare.bat              # Script di setup automatico (Windows)
 ├── prepare.sh               # Script di setup automatico (Linux/MacOS)
@@ -420,7 +421,7 @@ Particle-Identification-from-Detector-Responses/
 
 ## 6. Configurazione
 
-Tutti i parametri sono configurati in **`config.yaml`**. È possibile modificarli senza alterare il codice. Alcune della sezioni principali:
+Tutti i parametri sono configurati in **`config/config.yaml`**. È possibile modificarli senza alterare il codice. Alcune della sezioni principali:
 
 | Sezione | Cosa controlla |
 |---------|---------------|
@@ -434,7 +435,7 @@ Tutti i parametri sono configurati in **`config.yaml`**. È possibile modificarl
 
 ### Esempio: cambiare l'architettura del MLP
 
-In `config.yaml`:
+In `config/config.yaml`:
 
 ```yaml
 deep_learning:
