@@ -138,7 +138,7 @@ class CutsBasedPID:
         """Crea il grafico tabellare dei range feature per classe."""
         if feature_names is None or not self.ranges:
             return
-        from src.visualization import plot_baseline_ranges
+        from plot.visualization import plot_baseline_ranges
         print()
         plot_baseline_ranges(self.class_names, self.ranges, feature_names, config)
 

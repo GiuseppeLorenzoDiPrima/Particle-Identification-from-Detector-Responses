@@ -33,3 +33,9 @@ Best model/
 
 # ToDo
 ToDo/
+
+# __init__.py
+utils/__init__.py
+data_classes/__init__.py
+plot/__init__.py
+models/__init__.py

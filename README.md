@@ -337,8 +337,6 @@ python main.py --config mia_config.yaml
 Particle-Identification-from-Detector-Responses/
 │
 ├── main.py                  # Entry point
-├── config/
-│   └── config.yaml          # Configurazione centralizzata
 ├── requirements.txt         # Dipendenze Python
 ├── prepare.bat              # Script di setup automatico (Windows)
 ├── prepare.sh               # Script di setup automatico (Linux/MacOS)
@@ -346,16 +344,28 @@ Particle-Identification-from-Detector-Responses/
 ├── LICENSE                  # MIT License
 ├── .gitignore
 │
-├── src/                     # Codice sorgente modulare
+├── data_classes/
 │   ├── __init__.py
-│   ├── data_loader.py       # Download da Kaggle + preprocessing + split
-│   ├── visualization.py     # Grafici: Bethe-Bloch, distribuzioni, ROC, CM, ecc...
+│   └── data_loader.py       # Download da Kaggle + preprocessing + suddivisione in sets
+│
+├── models/
+│   ├── __init__.py                   
 │   ├── baseline.py          # PID tradizionale a tagli
 │   ├── classical_models.py  # LR, KNN, Decision Tree, Random Forest e XGBoost
-│   ├── deep_learning.py     # MLP con Framework PyTorch
+│   └── deep_learning.py     # MLP con Framework PyTorch
+│
+├── utils/
+│   ├── __init__.py                   
 │   ├── evaluation.py        # Metriche, tabella comparativa, report, ecc...
 │   ├── interpretability.py  # Analisi SHAP values
 │   └── uncertainty.py       # MC Dropout e uncertainty quantification
+│
+├── plot/
+│   ├── __init__.py                   
+│   └── visualization.py     # Grafici: Bethe-Bloch, distribuzioni, ROC, CM, ecc...
+│
+├── config/
+│   └── config.yaml          # Configurazione centralizzata
 │
 ├── data/                    # Dataset CSV (scaricato automaticamente)
 │
@@ -479,7 +489,6 @@ Dopo un'esecuzione della papeline (completa o rapida), alcuni degli elementi gen
 | `uncertainty_scatter.png` | Mappa di incertezza nel piano Bethe-Bloch (energia vs quantità di moto) |
 | `model_comparison_groups.png` | Confronto complessivo tra metriche per tutti i modelli |
 | `model_*_comparison.png` | Confronto per metrica tra tutti i modelli |
-| `cube_separability_*.png` | Mapping tridimensionale delle features per diversi modelli |
 
 ### Risultati (`outputs/results/`)
 
@@ -487,7 +496,6 @@ Dopo un'esecuzione della papeline (completa o rapida), alcuni degli elementi gen
 |------|-------------|
 | `model_comparison.csv` | CSV con i risultati ottenuti per ciascuna metrica per ogni modello |
 | `report_*.txt` | Classification report dettagliato per modello |
-| `cube_separability_*.txt` | Distanza intra-classe ed inter-classe tra features per tutti i modelli |
 | `report_model_comparison.txt` | Tabella dei risultati finale (confronto tra modelli) |
 
 ### Logs (`outputs/logs/`)

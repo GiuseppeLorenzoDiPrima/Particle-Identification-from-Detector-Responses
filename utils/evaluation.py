@@ -26,21 +26,14 @@ from sklearn.preprocessing import label_binarize
 from sklearn.feature_selection import f_classif
 
 
-from src.visualization import (
+from plot.visualization import (
     plot_confusion_matrix,
     plot_roc_curves,
     get_particle_labels,
     setup_publication_style,
     plot_metrics_comparison,
     plot_metric_groups_comparison,
-    plot_cube_separability,
 )
-
-# 3D interattivo per test (plotly opzionale)
-try:
-    import plotly.graph_objects as go # type: ignore
-except ImportError:
-    go = None
 
 logger = logging.getLogger(__name__)
 
@@ -201,10 +194,6 @@ def generate_full_report(all_results: dict, data: dict, config: dict):
     if config["visualization"]["graph"]:
         plot_metrics_comparison(comparison, config)
         plot_metric_groups_comparison(comparison, config)
-
-    # --- Visualizzazione iperspazio / separabilita' inter/intra classi ---
-    if config["visualization"]["graph"]:
-        plot_cube_separability(data, all_results, config)
 
     return comparison
 

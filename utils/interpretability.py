@@ -13,7 +13,7 @@ import numpy as np
 import shap # type: ignore
 import matplotlib.pyplot as plt
 
-from src.visualization import get_particle_labels, setup_publication_style, plot_shap_results
+from plot.visualization import get_particle_labels, setup_publication_style, plot_shap_results
 
 logger = logging.getLogger(__name__)
 

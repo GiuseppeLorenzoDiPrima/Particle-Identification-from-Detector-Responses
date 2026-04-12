@@ -235,6 +235,6 @@ def train_mlp(data: dict, config: dict) -> dict:
 
 def plot_training_history(history: dict, config: dict):
     """Grafico loss e accuracy durante il training MLP."""
-    from src.visualization import plot_training_history as _plot
+    from plot.visualization import plot_training_history as _plot
     print()
     _plot(history, config)

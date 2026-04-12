@@ -191,7 +191,7 @@ def train_and_evaluate(data: dict, config: dict) -> dict:
 
 def plot_feature_importance(results: dict, feature_names: list, config: dict):
     """Grafico della feature importance per i modelli che la supportano."""
-    from src.visualization import plot_feature_importance as _plot
+    from plot.visualization import plot_feature_importance as _plot
     print()
     logger.info("Creazione grafico feature importance...")
     _plot(results, feature_names, config)

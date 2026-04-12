@@ -1,6 +1,14 @@
 """
+================================================
 Particle Identification from Detector Responses
 ================================================
+
+Progetto di ML e DL applicato alla fisica delle particelle:
+Identificazione di 4 specie di particelle a partire dalle
+risposte simulate con metodo Monte Carlo di 6 rivelatori, 
+confrontando metodo a tagli tradizionale, modelli classici di 
+Machine Learning e Deep Learning. Condotto anche uno studio
+di interpretabilità dei modelli di ML e DL implementati.
 
 Entry point del progetto. Esegue la pipeline completa:
 
@@ -27,20 +35,20 @@ import os
 import sys
 import time
 
-from src.data_loader import load_config, load_and_preprocess
-from src.visualization import (
+from data_classes.data_loader import load_config, load_and_preprocess
+from plot.visualization import (
     setup_publication_style,
     plot_bethe_bloch,
     plot_feature_distributions,
     plot_class_distribution,
     plot_correlation_matrix,
 )
-from src.baseline import run_baseline
-from src.classical_models import train_and_evaluate, plot_feature_importance
-from src.deep_learning import train_mlp, plot_training_history
-from src.evaluation import generate_full_report
-from src.interpretability import run_shap_analysis
-from src.uncertainty import run_uncertainty_analysis
+from models.baseline import run_baseline
+from models.classical_models import train_and_evaluate, plot_feature_importance
+from models.deep_learning import train_mlp, plot_training_history
+from utils.evaluation import generate_full_report
+from utils.interpretability import run_shap_analysis
+from utils.uncertainty import run_uncertainty_analysis
 
 
 def setup_logging(config: dict):

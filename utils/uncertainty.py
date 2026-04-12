@@ -14,7 +14,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-from src.visualization import get_particle_labels, plot_uncertainty_results
+from plot.visualization import get_particle_labels, plot_uncertainty_results
 
 logger = logging.getLogger(__name__)
 
