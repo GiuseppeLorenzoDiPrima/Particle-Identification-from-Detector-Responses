@@ -33,7 +33,6 @@ Funzione privata. Istanzia i modelli abilitati nel file di configurazione.
 | `max_iter` | `classical_models.logistic_regression.max_iter` | Iterazioni massime LBFGS |
 | `solver` | `classical_models.logistic_regression.solver` | Algoritmo ottimizzazione |
 | `class_weight` | `classical_models.logistic_regression.class_weight` | Gestione classi sbilanciate |
-| `multi_class` | `classical_models.logistic_regression.multi_class` | Classificazione multi-classe |
 
 #### `"K-NN"` → `sklearn.neighbors.KNeighborsClassifier`
 

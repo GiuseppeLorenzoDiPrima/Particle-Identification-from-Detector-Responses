@@ -38,7 +38,6 @@ def _build_models(config: dict) -> dict:
             max_iter=cfg["logistic_regression"]["max_iter"],
             solver=cfg["logistic_regression"]["solver"],
             class_weight=cfg["logistic_regression"]["class_weight"],
-            multi_class=cfg["logistic_regression"]["multi_class"],
         )
 
     if cfg.get("knn", {}).get("enabled", False):

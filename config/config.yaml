@@ -44,7 +44,6 @@ classical_models:
   logistic_regression:
     enabled: true
     max_iter: 1500
-    multi_class: "multinomial"
     solver: "lbfgs"
     class_weight: "balanced"
   knn:
