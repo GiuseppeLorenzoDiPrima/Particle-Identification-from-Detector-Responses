@@ -81,10 +81,14 @@ def setup_logging(config: dict):
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(logging.Formatter("%(message)s"))
 
-    # Filtra: mostra solo logger del progetto (src.*, main, __main__)
+    # Filtra: mostra solo logger del progetto (main, __main__, data_classes.*, models.*, utils.*, plot.*)
+    _PROJECT_PREFIXES = ("data_classes.", "models.", "utils.", "plot.")
+
     class ProjectFilter(logging.Filter):
         def filter(self, record):
-            return record.name in ("main", "__main__") or record.name.startswith("src.")
+            return record.name in ("main", "__main__") or any(
+                record.name.startswith(p) for p in _PROJECT_PREFIXES
+            )
 
     console_handler.addFilter(ProjectFilter())
     root.addHandler(console_handler)
