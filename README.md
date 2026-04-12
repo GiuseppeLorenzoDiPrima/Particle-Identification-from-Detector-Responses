@@ -345,23 +345,19 @@ Particle-Identification-from-Detector-Responses/
 ├── .gitignore
 │
 ├── data_classes/
-│   ├── __init__.py
 │   └── data_loader.py       # Download da Kaggle + preprocessing + suddivisione in sets
 │
-├── models/
-│   ├── __init__.py                   
+├── models/                  
 │   ├── baseline.py          # PID tradizionale a tagli
 │   ├── classical_models.py  # LR, KNN, Decision Tree, Random Forest e XGBoost
 │   └── deep_learning.py     # MLP con Framework PyTorch
 │
-├── utils/
-│   ├── __init__.py                   
+├── utils/                 
 │   ├── evaluation.py        # Metriche, tabella comparativa, report, ecc...
 │   ├── interpretability.py  # Analisi SHAP values
 │   └── uncertainty.py       # MC Dropout e uncertainty quantification
 │
-├── plot/
-│   ├── __init__.py                   
+├── plot/                  
 │   └── visualization.py     # Grafici: Bethe-Bloch, distribuzioni, ROC, CM, ecc...
 │
 ├── config/
@@ -369,10 +365,12 @@ Particle-Identification-from-Detector-Responses/
 │
 ├── data/                    # Dataset CSV (scaricato automaticamente)
 │
-├── github_icon/             # Immagini per il README.md (questo file)
+├── docs/                    # Documentazione completa del progetto
 │
-└── outputs/
-    ├── figures/             # Tutti i grafici generati (.png)
+├── .github/                 # Immagini per il README.md (questo file)
+│
+└── outs/
+    ├── imgs/                # Tutti i grafici generati (.png)
     ├── models/              # Modelli salvati (es. mlp_best.pt)
     ├── logs/                # Log di addestramento
     └── results/             # Tabelle CSV e report testuali
@@ -409,7 +407,7 @@ Particle-Identification-from-Detector-Responses/
 - Rete neurale densa (Multi-Layer Perceptron) basata sul framework PyTorch
 - Architettura: 64 → 128 → 256 → 128 neuroni, con ReLU, BatchNorm e Dropout
 - Early stopping sulla validation loss (default 20 epoche di pazienza)
-- Salvataggio automatico del miglior modello in outputs/models
+- Salvataggio automatico del miglior modello in outs/models
 
 ### Fase 5 - Interpretabilità e Uncertainty
 
@@ -425,7 +423,7 @@ Particle-Identification-from-Detector-Responses/
 - Matrice di confusione per ogni modello
 - Curve ROC one-vs-rest per ogni classe
 - Classification report dettagliato
-- Tutti i risultati vengono salvati al path: `outputs/results/`
+- Tutti i risultati vengono salvati al path: `outs/results/`
 
 ---
 
@@ -467,7 +465,7 @@ dataset:
 
 Dopo un'esecuzione della papeline (completa o rapida), alcuni degli elementi generati in `outputs/` sono:
 
-### Grafici (`outputs/figures/*/`)
+### Grafici (`outs/imgs/*/`)
 
 | File | Descrizione |
 |------|-------------|
@@ -490,7 +488,7 @@ Dopo un'esecuzione della papeline (completa o rapida), alcuni degli elementi gen
 | `model_comparison_groups.png` | Confronto complessivo tra metriche per tutti i modelli |
 | `model_*_comparison.png` | Confronto per metrica tra tutti i modelli |
 
-### Risultati (`outputs/results/`)
+### Risultati (`outs/results/`)
 
 | File | Descrizione |
 |------|-------------|
@@ -498,13 +496,13 @@ Dopo un'esecuzione della papeline (completa o rapida), alcuni degli elementi gen
 | `report_*.txt` | Classification report dettagliato per modello |
 | `report_model_comparison.txt` | Tabella dei risultati finale (confronto tra modelli) |
 
-### Logs (`outputs/logs/`)
+### Logs (`outs/logs/`)
 
 | File | Descrizione |
 |------|-------------|
 | `run.log` | Log completo dell'esecuzione (con info orario) |
 
-### Modelli (`outputs/models/`)
+### Modelli (`outs/models/`)
 
 | File | Descrizione |
 |------|-------------|

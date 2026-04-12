@@ -16,6 +16,7 @@ data/
 # Output (generati, non versionati)
 outputs/
 .hintrc
+outs/
 
 # IDE
 .vscode/
