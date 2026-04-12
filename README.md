@@ -113,13 +113,13 @@ Pipeline completa per Particle IDentification (PID) basata su:
 </div>
 
 <p align="center">
-  <img src="github_icon\bethe_bloch.png" height="220" width="45%">
-  <img src="github_icon\correlation_matrix.png" height="220" width="45%">
+  <img src=".github\bethe_bloch.png" height="220" width="45%">
+  <img src=".github\correlation_matrix.png" height="220" width="45%">
 </p>
 
 <p align="center">
-  <img src="github_icon\model_comparison_groups.png" height="220" width="45%">
-  <img src="github_icon\SHAP_summary_xgboost.png" height="220" width="45%">
+  <img src=".github\model_comparison_groups.png" height="220" width="45%">
+  <img src=".github\SHAP_summary_xgboost.png" height="220" width="45%">
 </p>
 
 <p align="center">

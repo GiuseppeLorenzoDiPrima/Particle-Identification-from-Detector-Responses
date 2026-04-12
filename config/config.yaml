@@ -5,11 +5,11 @@
 # --- Percorsi ---
 paths:
   data_dir: "data"
-  output_dir: "outputs"
-  figures_dir: "outputs/figures"
-  models_dir: "outputs/models"
-  results_dir: "outputs/results"
-  log_dir: "outputs/logs"
+  output_dir: "outs"
+  figures_dir: "outs/imgs"
+  models_dir: "outs/models"
+  results_dir: "outs/results"
+  log_dir: "outs/logs"
 
 # --- Dataset Kaggle ---
 dataset:
