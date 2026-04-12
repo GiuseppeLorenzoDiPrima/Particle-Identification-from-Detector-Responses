@@ -2,7 +2,7 @@
 
 **File sorgente:** [`models/baseline.py`](../../models/baseline.py)
 
-Implementazione del classificatore tradizionale a tagli percentili (cuts-based PID), che riproduce la metodologia classica usata in fisica sperimentale per la particle identification.
+Implementazione del classificatore tradizionale a tagli percentili (cuts-based PID), che riproduce la metodologia classica usata in fisica sperimentale per la Particle IDentification.
 
 ---
 
@@ -63,12 +63,12 @@ Inizializza il classificatore con i parametri di configurazione e le informazion
 
 | Parametro | Tipo | Descrizione |
 |---|---|---|
-| `config` | `dict` | Dizionario di configurazione. Legge `baseline_cuts.low_percentile` (default 5), `baseline_cuts.high_percentile` (default 95), `baseline_cuts.show_range`, `visualization.graph` |
+| `config` | `dict` | Dizionario di configurazione. Legge `baseline_cuts.low_percentile` (default 10), `baseline_cuts.high_percentile` (default 90), `baseline_cuts.show_range`, `visualization.graph` |
 | `data` | `dict` | Dizionario dati prodotto da `load_and_preprocess()`. Legge `feature_names`, `class_names`, `feature_for_print` |
 
 **Note:**
 - `ranges` e `centroids` sono inizializzati come dizionari vuoti. Vengono popolati solo dopo la chiamata a `fit()`.
-- I valori di default dei percentili nel codice sono 5 e 95, ma il file `config.yaml` di default usa 10 e 90.
+- I valori di default dei percentili sono 10 e 90, configurabili attraverso il file `config.yaml` (che di default usa 10 e 90).
 
 ---
 
@@ -99,7 +99,7 @@ Per ogni classe $c = 0, 1, 2, 3$:
    - $\text{high}_j^{(c)} = \text{percentile}(X_c[:, j],\; \text{high\_percentile})$
    - Memorizza: `self.ranges[c][j] = (low, high)`
 
-**Effetti collaterali:**
+**Funzioni abbinate:**
 - Se `show_range=True`: chiama `_print_ranges()` per stampare la tabella a terminale
 - Se `graph=True`: chiama `plot_feature_ranges()` per generare il grafico
 
@@ -119,7 +119,7 @@ Range feature per classe:
 +----------+-------------------+-------------------+---
 | Classe   | p                 | theta             | ...
 +----------+-------------------+-------------------+---
-| Elettrone| 0.234 - 4.567     | 0.123 - 1.890     | ...
+| Positrone | 0.234 - 4.567     | 0.123 - 1.890     | ...
 ...
 ```
 
@@ -150,7 +150,7 @@ Per ogni evento $i$:
 2. Calcola il punteggio $s_{i,c} = \sum_j \mathbf{1}[X[i,j] \in \text{range}_j^{(c)}]$
 3. Trova le classi con punteggio massimo
 4. Se una sola classe ha punteggio massimo → assegna quella classe
-5. Se più classi hanno punteggio massimo (**tie-breaking**):
+5. Se più classi hanno lo stesso punteggio massimo (**tie-breaking**):
    - Calcola la distanza euclidea $d_c = \|X[i] - \mu_c\|_2$ per ogni classe in parità
    - Assegna la classe con distanza minima
 
@@ -201,7 +201,7 @@ Genera il grafico tabellare dei range feature delegando a `plot.visualization.pl
 | `feature_names` | `list[str]` o `None` | Nomi delle feature. Se `None` o se `self.ranges` è vuoto, la funzione ritorna senza fare nulla |
 | `config` | `dict` | Dizionario di configurazione (passato a `plot_baseline_ranges`) |
 
-**Effetti collaterali:** Salva `outs/imgs/baseline/range_features.png`.
+**Effetti:** Salva `outs/imgs/baseline/range_features.png`.
 
 ---
 

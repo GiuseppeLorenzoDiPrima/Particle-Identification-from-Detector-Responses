@@ -34,7 +34,7 @@ Calcola un set completo di metriche di classificazione per un singolo modello.
 
 | Chiave | Tipo | Descrizione |
 |---|---|---|
-| `accuracy` | `float` | Frazione di predizioni corrette: $\frac{TP}{N}$ |
+| `accuracy` | `float` | Frazione di predizioni corrette: $\frac{TP}{TP + FP + TN + FN}$ |
 | `f1_macro` | `float` | F1-score macro: media non pesata dell'F1 per ogni classe |
 | `precision_macro` | `float` | Precision macro: media non pesata della precision per ogni classe |
 | `recall_macro` | `float` | Recall macro: media non pesata della recall per ogni classe |

@@ -86,10 +86,9 @@ features:
 | `names` | `list[str]` | Vedi sopra | Lista delle colonne del CSV da usare come feature. Se non specificato, vengono usate tutte le colonne tranne il target |
 | `target` | `str` | `"id"` | Nome della colonna target nel CSV (PDG ID numerico) |
 
-> **Nota:** Attualmente nel codice `feature_names` viene derivata dal CSV come tutte le colonne escluso il target, ignorando `features.names`. Il campo esiste per documentazione e possibile uso futuro.
+> **Nota:** Attualmente nel codice `feature_names` viene derivata dal CSV come tutte le colonne escluso il target.
 
 ---
-
 ## Sezione `baseline_cuts` — Baseline a tagli
 
 ```yaml
@@ -219,7 +218,7 @@ cross_validation:
 | `enabled` | `bool` | `true` | Se `false`, salta la cross-validation e addestra direttamente sul training set completo |
 | `n_folds` | `int` | `5` | Numero di fold per la k-fold stratificata |
 | `shuffle` | `bool` | `true` | Se `true`, i dati vengono mescolati prima di creare i fold |
-| `stratified` | `bool` | `true` | Attualmente sempre stratificata (`StratifiedKFold`); questo campo è per documentazione |
+| `stratified` | `bool` | `true` | Attualmente è possibile scegliere tra `StratifiedKFold` o `KFold` in base al parametro stratified del file di configurazione (rispettivamente `true` o `false`.) |
 
 ---
 
@@ -244,7 +243,7 @@ deep_learning:
 | `learning_rate` | `float` | `0.001` | Learning rate per l'ottimizzatore Adam |
 | `batch_size` | `int` | `512` | Dimensione del mini-batch per il training e la valutazione |
 | `epochs` | `int` | `100` | Numero massimo di epoche di training |
-| `early_stopping_patience` | `int` | `20` | Numero di epoche consecutive senza miglioramento della validation loss prima di fermare il training |
+| `early_stopping_patience` | `int` | `20` | Numero di epoche anche NON consecutive senza miglioramento della validation loss prima di fermare il training |
 | `weight_decay` | `float` | `0.0001` | Coefficiente di regolarizzazione L2 (weight decay) nell'ottimizzatore Adam |
 | `show_architecture` | `bool` | `true` | Se `true`, stampa il summary dell'architettura MLP all'inizio del training |
 
@@ -271,7 +270,7 @@ interpretability:
 | Chiave | Tipo | Default | Descrizione |
 |---|---|---|---|
 | `enabled` | `bool` | `true` | Se `false`, la Fase 5a (SHAP) viene saltata completamente |
-| `shap_samples` | `int` | `1500` | Numero di campioni del test set usati per il calcolo degli SHAP values. Aumentare per stime più accurate, ridurre per velocità. Per il KernelExplainer della MLP, vengono usati al massimo 100 campioni indipendentemente da questo valore |
+| `shap_samples` | `int` | `1500` | Numero di campioni del test set usati per il calcolo degli SHAP values. Aumentare per stime più accurate, ridurre per velocità. Identico ragionamento per il KernelExplainer della MLP, vengono usati al massimo `shap_samples_kernel_explainer` campioni indipendentemente da questo valore |
 
 ---
 
@@ -319,8 +318,6 @@ visualization:
 | `graph` | `bool` | `true` | Se `false`, disabilita la generazione di tutti i grafici (utile per esecuzioni puramente numeriche) |
 | `dpi` | `int` | `600` | Risoluzione delle figure salvate in DPI. 600 è adatto per la stampa di qualità pubblicazione |
 | `figsize` | `list[int, int]` | `[12, 8]` | Dimensioni di default delle figure in pollici `[larghezza, altezza]`. Nota: alcune funzioni sovrascrivono questo valore per dimensioni più appropriate |
-| `style` | `str` | `"seaborn-v0_8-whitegrid"` | Stile matplotlib. Attualmente non usato direttamente (il modulo usa `setup_publication_style`) |
-| `palette` | `str` | `"Set2"` | Palette colori seaborn. Attualmente non usato direttamente (usa `IEEE_PALETTE` hardcoded) |
 | `comparison_metrics` | `list[str]` | Vedi sopra | Lista di metriche per cui generare grafici a barre individuali (`plot_metrics_comparison`) |
 | `comparison_group_metrics` | `list[str]` | Vedi sopra | Lista di metriche da includere nel grafico a barre raggruppate (`plot_metric_groups_comparison`) |
 

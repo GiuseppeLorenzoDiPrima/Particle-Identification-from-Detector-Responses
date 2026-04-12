@@ -4,13 +4,13 @@
 
 ### Particle Identification (PID)
 
-La **Particle Identification** (identificazione di particelle) è uno dei problemi fondamentali della fisica sperimentale delle particelle. In un esperimento di scattering (urto) tra particelle, le sonde prodotte dalla collisione attraversano una serie di rivelatori che ne misurano proprietà fisiche. Il compito del sistema di PID è determinare con precisione la **specie di ogni particella** a partire da queste misurazioni.
+La **Particle Identification** (identificazione di particelle) è uno dei problemi fondamentali della fisica sperimentale delle particelle. In un esperimento di scattering (urto) tra particelle, le sotto-particelle prodotte dalla collisione attraversano una serie di rivelatori che ne misurano proprietà fisiche. Il compito del sistema è determinare con precisione la **specie di ogni particella** a partire da queste misurazioni.
 
 Questo progetto si concentra sull'identificazione di 4 specie di particelle cariche prodotte in scattering inelastico elettrone-protone:
 
 | Particella | Simbolo | PDG ID | Carica |
 |---|---|---|---|
-| Positrone (elettrone) | e⁺ | −11 | +1 |
+| Positrone | e⁺ | −11 | +1 |
 | Pione positivo | π⁺ | 211 | +1 |
 | Kaone positivo | K⁺ | 321 | +1 |
 | Protone | p | 2212 | +1 |
@@ -23,10 +23,10 @@ Il dataset contiene le risposte simulate con metodo **Monte Carlo** di 6 rivelat
 |---|---|---|
 | `p` | $p$ | Momento della particella [GeV/c] |
 | `theta` | $\theta$ | Angolo polare rispetto al fascio [rad] |
-| `beta` | $\beta$ | Velocità relativistica $v/c$ (da Time-of-Flight) |
+| `beta` | $\beta$ | Velocità ridotta $v/c$ (da Time-of-Flight) |
 | `nphe` | $n_{phe}$ | Numero di fotoelettroni rivelati (rivelatore Cherenkov) |
-| `ein` | $E_{in}$ | Energia depositata nel calorimetro interno [GeV] |
-| `eout` | $E_{out}$ | Energia depositata nel calorimetro esterno [GeV] |
+| `ein` | $E_{in}$ | Energia depositata nel calorimetro in ingresso [GeV] |
+| `eout` | $E_{out}$ | Energia depositata nel calorimetro in uscita [GeV] |
 
 #### Diagramma di Bethe-Bloch
 
@@ -63,7 +63,7 @@ Cinque modelli di ML supervisionato, tutti addestrati sulle stesse feature:
 - **Random Forest:** ensemble di alberi con bagging
 - **XGBoost:** gradient boosting con regolarizzazione
 
-Tutti valutati con **cross-validation stratificata a 5 fold**.
+Per robustezza sperimentale, tutti i modelli sono stati anche valutati con **cross-validation stratificata a 5-fold**.
 
 ### 3. Deep Learning (Fase 4)
 

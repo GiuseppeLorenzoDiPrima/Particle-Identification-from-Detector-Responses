@@ -34,7 +34,7 @@ class CutsBasedPID:
     """
     Classificatore a tagli sul piano multidimensionale dE/dx vs p.
 
-    Strategia: per ogni feature, calcola i percentili [5, 95] di ogni
+    Strategia: per ogni feature, calcola i percentili [10, 90] di ogni
     classe sul training set. Per un nuovo evento, la classe assegnata
     è quella con il maggior numero di feature il cui valore cade dentro l'intervallo atteso.
 
@@ -45,8 +45,8 @@ class CutsBasedPID:
         self.ranges = {}                        # {class_id: {feat_idx: (low, high)}}
         self.centroids = {}                     # {class_id: centroid_vector}
         self.n_classes = 0
-        self.low_percentile = config["baseline_cuts"].get("low_percentile", 5)      # Percentile inferiore
-        self.high_percentile = config["baseline_cuts"].get("high_percentile", 95)   # Percentile superiore
+        self.low_percentile = config["baseline_cuts"].get("low_percentile", 10)      # Percentile inferiore
+        self.high_percentile = config["baseline_cuts"].get("high_percentile", 90)   # Percentile superiore
         self.show_range = config["baseline_cuts"].get("show_range", False)          # Mostra range
         self.feature_names = data["feature_names"]
         self.class_names = data["class_names"]
@@ -155,8 +155,8 @@ def run_baseline(data: dict, config: dict) -> dict:
 
     logger.info("=" * 55)
     logger.info("FASE 2: Baseline a tagli. Percentili usati: [{}°, {}°].".format(
-        config["baseline_cuts"].get("low_percentile", 5),
-        config["baseline_cuts"].get("high_percentile", 95)
+        config["baseline_cuts"].get("low_percentile", 10),
+        config["baseline_cuts"].get("high_percentile", 90)
     ))
     logger.info("=" * 55)
 

@@ -8,13 +8,13 @@ Documentazione completa di ogni funzione, classe, metodo e costante del progetto
 
 | Modulo | File sorgente | Descrizione |
 |---|---|---|
-| [data\_classes](data_classes.md) | `data_classes/data_loader.py` | Download Kaggle, preprocessing, split, standardizzazione |
+| [data\_classes](data_classes.md) | `data_classes/data_loader.py` | Download Kaggle, preprocessing, suddivisione, standardizzazione |
 | [models.baseline](models_baseline.md) | `models/baseline.py` | Classificatore a tagli percentili (cuts-based PID) |
 | [models.classical\_models](models_classical.md) | `models/classical_models.py` | LR, KNN, DT, RF, XGBoost con cross-validation |
-| [models.deep\_learning](models_deep_learning.md) | `models/deep_learning.py` | MLP PyTorch con early stopping e MC Dropout |
-| [utils.evaluation](utils_evaluation.md) | `utils/evaluation.py` | Metriche, tabella comparativa, report finale |
+| [models.deep\_learning](models_deep_learning.md) | `models/deep_learning.py` | MLP PyTorch con early stopping, Batch-Normalization, ReLU e Dropout |
+| [utils.evaluation](utils_evaluation.md) | `utils/evaluation.py` | Metriche, tabella comparativa e report finali |
 | [utils.interpretability](utils_interpretability.md) | `utils/interpretability.py` | Analisi SHAP con TreeExplainer e KernelExplainer |
-| [utils.uncertainty](utils_uncertainty.md) | `utils/uncertainty.py` | MC Dropout, entropia predittiva, rejection curve |
+| [utils.uncertainty](utils_uncertainty.md) | `utils/uncertainty.py` | MC Dropout, entropia predittiva e rejection curve |
 | [plot.visualization](plot_visualization.md) | `plot/visualization.py` | Tutte le funzioni di visualizzazione matplotlib |
 
 ---
@@ -39,7 +39,7 @@ Documentazione completa di ogni funzione, classe, metodo e costante del progetto
 | `CutsBasedPID` | classe | Classificatore a tagli |
 | `CutsBasedPID.__init__()` | metodo | Inizializzazione con config e data |
 | `CutsBasedPID.fit()` | metodo | Calcola percentili e centroidi |
-| `CutsBasedPID._print_ranges()` | metodo | Stampa tabella range (privato) |
+| `CutsBasedPID._print_ranges()` | metodo | Stampa tabella range |
 | `CutsBasedPID.predict()` | metodo | Classifica nuovi eventi |
 | `CutsBasedPID.evaluate()` | metodo | Calcola accuracy sul test set |
 | `CutsBasedPID.plot_feature_ranges()` | metodo | Genera grafico tabella range |
@@ -71,7 +71,7 @@ Documentazione completa di ogni funzione, classe, metodo e costante del progetto
 |---|---|---|
 | `evaluate_model()` | funzione | Calcola metriche complete per un modello |
 | `build_comparison_table()` | funzione | Costruisce DataFrame comparativo |
-| `generate_full_report()` | funzione | Report completo: CSV, TXT, figure |
+| `generate_full_report()` | funzione | Report completo: CSV, TXT e figure |
 | `_safe_name()` | funzione (privata) | Conversione nome → nome file sicuro |
 
 ### `utils.interpretability`

@@ -14,7 +14,7 @@ La pipeline è composta da **6 fasi sequenziali**, orchestrate da `main.py`. Ogn
 2. **Caricamento CSV** in un DataFrame pandas
 3. **Subsample opzionale** (se `max_samples` è specificato in config)
 4. **Rimozione NaN** e validazione dell'integrità dei dati
-5. **Mappatura PDG → nome fisico:** i PDG ID numerici (-11, 211, 321, 2212) vengono convertiti nei nomi delle particelle (elettrone, pione, kaone, protone)
+5. **Mappatura PDG → nome fisico:** i PDG ID numerici (-11, 211, 321, 2212) vengono convertiti nei nomi delle particelle (positrone, pione, kaone, protone)
 6. **Label encoding:** i nomi delle classi vengono codificati come interi 0–3 con `sklearn.LabelEncoder`
 7. **Split stratificato:** 85% train+val / 15% test, poi 80% train / 20% val
 8. **Standardizzazione:** `StandardScaler` fittato **solo** sul training set, poi applicato a validation e test
@@ -88,7 +88,7 @@ Per ogni evento $\mathbf{x}$:
 ### Operazioni
 
 1. **Costruzione modelli** (solo quelli `enabled: true` in config)
-2. **Cross-validation stratificata** (se `enabled: true`) su `X_train` scalato
+2. **Cross-validation** (se `enabled: true`) su `X_train` scalato
 3. **Training** su `X_train` scalato completo
 4. **Valutazione** su `X_test` scalato
 5. Estrazione **feature importance** (dove disponibile)
@@ -147,7 +147,7 @@ Per ogni epoca:
 1. **Training:** forward pass → calcolo loss (CrossEntropy pesata) → backward → optimizer step
 2. **Validation:** forward pass in `torch.no_grad()` → calcolo loss e accuracy
 3. **Logging** ogni 5 epoche e all'epoca 0
-4. **Early stopping:** se `val_loss` non migliora per `patience` epoche consecutive, il training si ferma e viene ripristinato il best state dict
+4. **Early stopping:** se `val_loss` non migliora per `patience` epoche anche NON consecutive, il training si ferma e viene ripristinato il best state dict
 
 ### Class weights
 
@@ -170,6 +170,7 @@ dove $n_c$ è il numero di campioni della classe $c$ e $N$ è il numero totale d
     "train_time": 120.5,       # Secondi
     "history": {
         "train_loss": [0.45, 0.32, ...],  # Una voce per epoca
+        "train_acc": [0.93, 0.95, ...]
         "val_loss": [0.41, 0.30, ...],
         "val_acc": [0.88, 0.91, ...]
     },
@@ -194,7 +195,7 @@ dove $n_c$ è il numero di campioni della classe $c$ e $N$ è il numero totale d
 
 1. **Subsample** di `shap_samples` eventi dal test set
 2. Per ogni modello ad albero (RF, XGBoost, DT): `shap.TreeExplainer`
-3. Per la MLP: `shap.KernelExplainer` con background K-Means (50 cluster, 100 campioni max)
+3. Per la MLP: `shap.KernelExplainer` con background K-Means ( di default: 50 cluster, 100 campioni max)
 
 #### TreeExplainer vs KernelExplainer
 

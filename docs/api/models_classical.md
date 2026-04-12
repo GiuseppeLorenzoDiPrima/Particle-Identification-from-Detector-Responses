@@ -14,7 +14,7 @@ Modulo per il training e la valutazione di modelli di Machine Learning classico:
 def _build_models(config: dict) -> dict
 ```
 
-Funzione privata. Istanzia i modelli sklearn/xgboost abilitati nel file di configurazione.
+Funzione privata. Istanzia i modelli abilitati nel file di configurazione.
 
 **Parametri:**
 
@@ -33,9 +33,7 @@ Funzione privata. Istanzia i modelli sklearn/xgboost abilitati nel file di confi
 | `max_iter` | `classical_models.logistic_regression.max_iter` | Iterazioni massime LBFGS |
 | `solver` | `classical_models.logistic_regression.solver` | Algoritmo ottimizzazione |
 | `class_weight` | `classical_models.logistic_regression.class_weight` | Gestione classi sbilanciate |
-| `multi_class` | NON passato | Valore di default sklearn (`"auto"`) |
-
-> **Nota:** `multi_class` è presente nel YAML ma **non viene passato** al costruttore — viene usato solo il `solver` specificato, che implicitamente supporta la classificazione multinomiale.
+| `multi_class` | `classical_models.logistic_regression.multi_class` | Classificazione multi-classe |
 
 #### `"K-NN"` → `sklearn.neighbors.KNeighborsClassifier`
 
@@ -87,7 +85,7 @@ def run_cross_validation(
 ) -> dict
 ```
 
-Esegue la cross-validation stratificata k-fold su tutti i modelli forniti.
+Esegue la cross-validation stratificata k-fold su tutti i modelli forniti. k viene impostato nel file di configurazione (default: 5).
 
 **Parametri:**
 
@@ -201,7 +199,7 @@ Wrapper che delega la creazione del grafico a `plot.visualization.plot_feature_i
 | `feature_names` | `list[str]` | Lista dei nomi feature |
 | `config` | `dict` | Dizionario di configurazione |
 
-**Effetti collaterali:** Salva `outs/imgs/training/feature_importance.png`.
+**Effetti:** Salva `outs/imgs/training/feature_importance.png`.
 
 **Esempio completo:**
 

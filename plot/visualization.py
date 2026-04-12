@@ -386,11 +386,13 @@ def plot_training_history(history: dict, config: dict):
     ax1.legend()
     ax1.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9")
 
+    ax2.plot(epochs, history["train_acc"], label="Train Accuracy", linewidth=1.8,
+             color=IEEE_PALETTE[0])
     ax2.plot(epochs, history["val_acc"], label="Val Accuracy", linewidth=1.8,
-             color=IEEE_PALETTE[2])
+             color=IEEE_PALETTE[1], linestyle="--")
     ax2.set_xlabel("Epoch", fontweight="bold")
     ax2.set_ylabel("Accuracy", fontweight="bold")
-    ax2.set_title("Validation Accuracy", pad=12)
+    ax2.set_title("Training e Validation Accuracy", pad=12)
     ax2.legend()
     ax2.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9")
 
@@ -563,7 +565,7 @@ def plot_shap_results(sv_list, X_sample, feature_names: list, labels: list,
     """Genera summary plot, bar plot e plot per classe per un modello SHAP."""
     import shap  # type: ignore
 
-    CLASS_NAMES = {1: "elettrone", 2: "kaone", 3: "pione", 4: "protone"}
+    CLASS_NAMES = {1: "positrone", 2: "kaone", 3: "pione", 4: "protone"}
 
     def _safe(name: str) -> str:
         return name.lower().replace(" ", "_").replace("(", "").replace(")", "")

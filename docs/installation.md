@@ -15,38 +15,41 @@
 
 Il dataset viene scaricato automaticamente tramite l'API Kaggle ufficiale. È necessario un account Kaggle e un token API.
 
-### 1. Creare l'API token
+### Passo 1 - Creare un account Kaggle
 
-1. Accedere a [kaggle.com](https://www.kaggle.com)
-2. Aprire il profilo → **Settings** → **API** → **Create New Token**
-3. Viene scaricato il file `kaggle.json`
+Se non si dispone già di un account, registrarsi su [kaggle.com](https://www.kaggle.com/) (è gratuito).
 
-### 2. Posizionare il token
+### Passo 2 - Generare la API Key
 
-**Linux / macOS:**
-```bash
-mkdir -p ~/.kaggle
-mv ~/Downloads/kaggle.json ~/.kaggle/kaggle.json
-chmod 600 ~/.kaggle/kaggle.json
+1. Creare una cartella al path:
+
+```
+C:\Users\<TUO_UTENTE>\.kaggle
 ```
 
-**Windows:**
-```powershell
-mkdir %USERPROFILE%\.kaggle
-copy %USERPROFILE%\Downloads\kaggle.json %USERPROFILE%\.kaggle\kaggle.json
-```
+2. Navigare alla pagina [kaggle.com/settings](https://www.kaggle.com/settings)
+3. Scorrere fino alla sezione **API**
+4. Cliccare su **"Create New Token"**
+5. Conservare la chiave esadecimale appena creata
 
-Il file `kaggle.json` deve contenere:
+### Passo 3 - Configurare la API
+
+6. Andare al path `C:\Users\<TUO_UTENTE>\.kaggle` e creare, al suo interno, un file `kaggle.json`
+7. Inserire, all'interno del file `C:\Users\<TUO_UTENTE>\.kaggle\kaggle.json` il contenuto:
+
 ```json
-{"username": "il_tuo_username", "key": "la_tua_api_key"}
+{"username": "il_tuo_username", "key": "una_stringa_esadecimale"}
 ```
 
-### 3. Accettare i termini del dataset
+### Passo 4 - Verificare il funzionamento
 
-Prima del primo download è necessario accettare le condizioni del dataset su Kaggle:
-- Visitare: `https://www.kaggle.com/datasets/naharrison/particle-identification-from-detector-responses`
-- Cliccare su **Download** e accettare le condizioni
+Dopo aver configurato il file, è possibile verificare che funzioni semplicemente aprendo un terminale e digitando:
 
+```bash
+pip install kaggle
+kaggle datasets list
+```
+> **Se compare una lista di dataset, le credenziali sono configurate correttamente.**
 ---
 
 ## Installazione delle dipendenze
@@ -108,7 +111,7 @@ if torch.cuda.is_available():
 ## Clonare il repository
 
 ```bash
-git clone <url-repository>
+git clone https://github.com/GiuseppeLorenzoDiPrima/Particle-Identification-from-Detector-Responses.git
 cd Particle-Identification-from-Detector-Responses
 ```
 
@@ -117,14 +120,13 @@ cd Particle-Identification-from-Detector-Responses
 ## Verifica dell'installazione
 
 ```bash
-python main.py --quick --phase 1
+python main.py --quick
 ```
 
 Questo comando:
 1. Scarica automaticamente il dataset da Kaggle (prima esecuzione)
 2. Carica 100.000 campioni (modalità `--quick`)
-3. Esegue solo la Fase 1 (preprocessing + visualizzazioni esplorative)
-4. Salva le figure in `outs/imgs/pre-processing/`
+3. Salva gli output in `outs/`
 
 Se non vengono segnalati errori, l'installazione è corretta.
 
@@ -164,7 +166,7 @@ Il file `kaggle.json` non è nella posizione corretta o i permessi non sono impo
 
 ### `OSError: [Errno 28] No space left on device`
 
-Il dataset completo (5M eventi) occupa circa 600 MB. Assicurarsi di avere sufficiente spazio. In alternativa, usare il parametro `max_samples` in `config.yaml` per lavorare con un sottoinsieme.
+Il dataset completo (5M eventi) occupa circa 600 MB. Assicurarsi di avere sufficiente spazio.
 
 ### CUDA non rilevata
 

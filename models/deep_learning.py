@@ -131,6 +131,7 @@ def train_mlp(data: dict, config: dict) -> dict:
         # --- Training ---
         model.train()
         train_losses = []
+        train_accs = []
         for X_batch, y_batch in train_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             optimizer.zero_grad()
@@ -139,6 +140,7 @@ def train_mlp(data: dict, config: dict) -> dict:
             loss.backward()
             optimizer.step()
             train_losses.append(loss.item())
+            train_accs.append(accuracy_score(y_batch.cpu().numpy(), outputs.argmax(dim=1).cpu().numpy()))
 
         # --- Validation ---
         model.eval()
@@ -155,26 +157,27 @@ def train_mlp(data: dict, config: dict) -> dict:
                 val_targets.append(y_batch.cpu().numpy())
 
         train_loss = np.mean(train_losses)
+        train_acc = np.mean(train_accs)
         val_loss = np.mean(val_losses)
         val_acc = accuracy_score(
             np.concatenate(val_targets), np.concatenate(val_preds)
         )
 
         history["train_loss"].append(train_loss)
+        history["train_acc"].append(train_acc)
         history["val_loss"].append(val_loss)
         history["val_acc"].append(val_acc)
 
         if (epoch + 1) % 5 == 0 or epoch == 0:
             logger.info(
                 f"  Epoch {epoch+1}/{cfg['epochs']}: "
-                f"train_loss={train_loss:.4f}, val_loss={val_loss:.4f}, "
+                f"train_loss={train_loss:.4f}, train_acc={train_acc:.4f}, val_loss={val_loss:.4f}, "
                 f"val_acc={val_acc:.4f}"
             )
 
         # Early stopping
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            patience_counter = 0
             best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
         else:
             patience_counter += 1

@@ -70,7 +70,7 @@ for module in model.modules():
         module.train()                        # solo Dropout rimane in train mode
 ```
 
-**Perché è necessario:** Di default, `model.eval()` disabilita il dropout oltre a congelare il BatchNorm. Questa funzione ri-abilita **solo** i layer Dropout, mantenendo il BatchNorm in modalità inferenza (media e varianza fisse). Questo è il comportamento corretto per MC Dropout.
+**Perché è necessario:** Di default, `model.eval()` disabilita il dropout oltre a congelare il BatchNorm. Questa funzione ri-abilita **solo** i layer Dropout, mantenendo il BatchNorm in modalità inferenza (media e varianza fisse).
 
 ---
 

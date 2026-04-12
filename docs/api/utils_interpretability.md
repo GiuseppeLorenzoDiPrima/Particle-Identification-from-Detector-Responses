@@ -91,7 +91,7 @@ idx = np.random.choice(len(data["X_test"]), min(n_samples, len(data["X_test"])),
 X_sample = data["X_test"][idx]
 ```
 
-Il subsample è necessario perché il calcolo SHAP è costoso. Per `TreeExplainer` vengono usati 1500 campioni; per `KernelExplainer` al massimo 100.
+Il subsample è necessario perché il calcolo SHAP è computazionalmente oneroso. Per `TreeExplainer` vengono usati di default 1500 campioni; per `KernelExplainer` al massimo di default 100 e per `background_clusters` viene fissato il valore di default di 50. I parametri sono configurabili nel file di configurazione.
 
 #### 3. SHAP per modelli tree-based
 
@@ -120,16 +120,16 @@ def mlp_predict(X):
         out = torch.softmax(model(X_t), dim=1)
         return out.cpu().numpy()
 
-n_shap = min(100, len(X_sample))       # Max 100 campioni per KernelExplainer
+n_shap = min(n_samples_kernel, len(X_sample)) # Max campioni per KernelExplainer
 X_shap = X_sample[:n_shap]
-background = shap.kmeans(X_shap, 50)   # 50 cluster come background
+background = shap.kmeans(X_shap, background_clusters) # background_clusters cluster come background
 explainer = shap.KernelExplainer(mlp_predict, background)
 raw_sv = explainer.shap_values(X_shap)
 ```
 
 **`shap.KernelExplainer`:** Metodo model-agnostico basato su perturbazioni. La funzione predict può essere qualsiasi callable. La **distribuzione di background** (qui K-Means con 50 cluster) approssima il valore atteso $E[f(\mathbf{x})]$.
 
-**Limitazione:** Il KernelExplainer usa al massimo 100 campioni indipendentemente da `shap_samples`, per questioni di performance. Con 100 campioni e 50 cluster di background, ogni chiamata esegue $\sim 100 \times 2^6 = 6400$ valutazioni della rete.
+**Limitazione:** Il KernelExplainer usa al massimo `n_samples_kernel` campioni indipendentemente da `shap_samples`, per questioni di performance. Con 100 campioni e 50 cluster di background (parametri di default), ogni chiamata esegue $\sim 100 \times 2^6 = 6400$ valutazioni della rete.
 
 In caso di eccezione, logga un warning e continua.
 
@@ -157,7 +157,7 @@ Per ogni modello analizzato (`random_forest`, `xgboost`, `decision_tree`, `mlp`)
 |---|---|
 | `outs/imgs/SHAP/SHAP_summary_{model}.png` | Beeswarm plot aggregato su tutte le classi |
 | `outs/imgs/SHAP/SHAP_bar_{model}.png` | Barplot importanza media assoluta SHAP |
-| `outs/imgs/SHAP/SHAP_{model}_class_elettrone.png` | Beeswarm per la classe elettrone |
+| `outs/imgs/SHAP/SHAP_{model}_class_positrone.png` | Beeswarm per la classe positrone |
 | `outs/imgs/SHAP/SHAP_{model}_class_kaone.png` | Beeswarm per la classe kaone |
 | `outs/imgs/SHAP/SHAP_{model}_class_pione.png` | Beeswarm per la classe pione |
 | `outs/imgs/SHAP/SHAP_{model}_class_protone.png` | Beeswarm per la classe protone |

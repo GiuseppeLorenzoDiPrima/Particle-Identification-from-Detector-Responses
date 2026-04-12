@@ -140,7 +140,7 @@ Per garantire la riproducibilità del progetto, tutti gli esperimenti sono stati
 ## Introduzione
 Benvenuta/o. Il presente progetto è stato sviluppato nell’ambito della preparazione all’esame di Principi di Calcolo Tensoriale, previsto dal piano di studi del Corso di Dottorato di Ricerca in Sistemi Intelligenti per l’Ingegneria presso l’Università degli Studi di Enna Kore.
 
-L’elaborato propone l’applicazione di tecniche di Machine Learning e Deep Learning al contesto della fisica delle particelle. In particolare, il problema affrontato riguarda la classificazione multi-classe: l’obiettivo consiste nell’identificare la natura di una particella in ingresso (tra elettrone, pione, kaone e protone) sulla base di sei risposte simulate attraverso il metodo Monte Carlo (simulazione di sei rivelatori).
+L’elaborato propone l’applicazione di tecniche di Machine Learning e Deep Learning al contesto della fisica delle particelle. In particolare, il problema affrontato riguarda la classificazione multi-classe: l’obiettivo consiste nell’identificare la natura di una particella in ingresso (tra positrone, pione, kaone e protone) sulla base di sei risposte simulate attraverso il metodo Monte Carlo (simulazione di sei rivelatori).
 
 I dati utilizzati provengono dalla piattaforma Open-Source [Kaggle](https://www.kaggle.com/database/naharrison/particle-identification-from-detector-responses) e consistono in 5 milioni di samples, ciascuno descritto da sei features. Tali dati sono stati generati mediante simulazioni basate sul metodo Monte Carlo.
 

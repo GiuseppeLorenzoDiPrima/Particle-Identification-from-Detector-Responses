@@ -2,7 +2,7 @@
 
 **File sorgente:** [`models/deep_learning.py`](../../models/deep_learning.py)
 
-Modulo di Deep Learning per la Particle Identification. Implementa una Multi-Layer Perceptron (MLP) con PyTorch, con Batch Normalization, Dropout, early stopping e supporto per MC Dropout e SHAP.
+Modulo di Deep Learning per la Particle Identification. Implementa una Multi-Layer Perceptron (MLP) con PyTorch, con Batch Normalization, Dropout, early stopping, ReLU e supporto per MC Dropout e SHAP.
 
 ---
 
@@ -130,7 +130,7 @@ Funzione privata. Converte i numpy array in `DataLoader` PyTorch.
 def train_mlp(data: dict, config: dict) -> dict
 ```
 
-Funzione principale del modulo. Addestra la MLP con early stopping e valuta il best model sul test set.
+Funzione principale del modulo. Addestra la MLP con early stopping e valuta il best model sul validation set.
 
 **Parametri:**
 
@@ -198,9 +198,9 @@ Per ogni epoca:
 2. **Validation:** `model.eval()` con `torch.no_grad()` → forward → loss e accuracy
 3. **Logging:** ogni 5 epoche e alla prima (epoch 0)
 4. **Early stopping:**
-   - Se `val_loss < best_val_loss`: aggiorna `best_val_loss`, azzera `patience_counter`, salva `best_state` (copia CPU dei pesi)
+   - Se `val_loss < best_val_loss`: aggiorna `best_val_loss`, salva `best_state` (copia CPU dei pesi)
    - Altrimenti: incrementa `patience_counter`
-   - Se `patience_counter >= early_stopping_patience`: ferma il loop
+   - Se `patience_counter >= early_stopping_patience`: ferma il ciclo di addestramento
 
 #### 6. Ripristino best model
 
@@ -242,7 +242,7 @@ Wrapper che delega la creazione del grafico a `plot.visualization.plot_training_
 | `history` | `dict` | Dizionario con chiavi `"train_loss"`, `"val_loss"`, `"val_acc"` (lista di float, una per epoca) |
 | `config` | `dict` | Dizionario di configurazione |
 
-**Effetti collaterali:** Salva `outs/imgs/training/mlp_training_history.png`.
+**Effetti:** Salva `outs/imgs/training/mlp_training_history.png`.
 
 ---
 

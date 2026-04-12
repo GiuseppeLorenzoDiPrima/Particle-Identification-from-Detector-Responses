@@ -5,7 +5,7 @@ Particle Identification from Detector Responses.
 Il dataset è disponibile su Kaggle: https://www.kaggle.com/datasets/naharrison/particle-identification-from-detector-responses
 
 Il dataset contiene risposte simulate di 6 rivelatori per 4 specie di particelle
-(Elettroni, Kaoni, Pioni e Protoni) prodotte in scattering inelastico elettrone-protone.
+(Positroni, Kaoni, Pioni e Protoni) prodotte in scattering inelastico elettrone-protone.
 """
 
 import os
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 # Mappa delle particelle: PDG ID -> nome fisico
 # -11 = positrone (e+), 211 = pione (pi+), 321 = kaone (K+), 2212 = protone (p)
 PARTICLE_NAMES = {
-    -11: "elettrone",
+    -11: "positrone",
     211: "pione",
     321: "kaone",
     2212: "protone",

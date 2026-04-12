@@ -6,7 +6,7 @@
 python main.py
 ```
 
-Esegue la **pipeline completa** nelle 6 fasi in sequenza. Richiede che il dataset Kaggle sia scaricabile (vedere [Installazione](installation.md)).
+Esegue la **pipeline completa** nelle 6 fasi in sequenza. Richiede che il dataset Kaggle sia scaricabile (vedere [Installazione](installation.md)).\
 
 ---
 

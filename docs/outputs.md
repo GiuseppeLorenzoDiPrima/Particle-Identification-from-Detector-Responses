@@ -49,7 +49,7 @@ outs/
 │   ├── SHAP/                          # Analisi SHAP (Fase 5a)
 │   │   ├── SHAP_summary_random_forest.png
 │   │   ├── SHAP_bar_random_forest.png
-│   │   ├── SHAP_random_forest_class_elettrone.png
+│   │   ├── SHAP_random_forest_class_positrone.png
 │   │   ├── SHAP_random_forest_class_kaone.png
 │   │   ├── SHAP_random_forest_class_pione.png
 │   │   ├── SHAP_random_forest_class_protone.png
@@ -216,12 +216,12 @@ Classification Report - XGBoost
 =======================================================
               precision    recall  f1-score   support
 
-    Elettrone     0.9723    0.9711    0.9717    112500
+    Positrone     0.9723    0.9711    0.9717    112500
        Kaone      0.9580    0.9623    0.9601    112500
        Pione      0.9788    0.9741    0.9764    112500
       Protone     0.9850    0.9878    0.9864    112500
 
-    accuracy                         0.9710    450000
+    accuracy                          0.9710    450000
    macro avg      0.9735    0.9738    0.9737    450000
 weighted avg      0.9735    0.9738    0.9737    450000
 ```

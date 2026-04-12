@@ -21,7 +21,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score, StratifiedKFold
+from sklearn.model_selection import cross_val_score, StratifiedKFold, KFold
 from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier # type: ignore
 
@@ -38,6 +38,7 @@ def _build_models(config: dict) -> dict:
             max_iter=cfg["logistic_regression"]["max_iter"],
             solver=cfg["logistic_regression"]["solver"],
             class_weight=cfg["logistic_regression"]["class_weight"],
+            multi_class=cfg["logistic_regression"]["multi_class"],
         )
 
     if cfg.get("knn", {}).get("enabled", False):
@@ -79,21 +80,29 @@ def _build_models(config: dict) -> dict:
 
 def run_cross_validation(X_train, y_train, models: dict, config: dict) -> dict:
     """
-    Cross-validation stratificata per tutti i modelli.
+    Cross-validation per tutti i modelli.
 
     Returns:
         Dict {nome_modello: {"cv_mean": float, "cv_std": float}}
     """
     cv_cfg = config["cross_validation"]
-    cv = StratifiedKFold(
-        n_splits=cv_cfg["n_folds"],
-        shuffle=cv_cfg["shuffle"],
-        random_state=config["dataset"]["random_state"],
-    )
-
+    if config["cross_validation"].get("stratified", False):
+        cv = StratifiedKFold(
+            n_splits=cv_cfg["n_folds"],
+            shuffle=cv_cfg["shuffle"],
+            random_state=config["dataset"]["random_state"],
+        )
+    else:
+        cv = KFold(
+            n_splits=cv_cfg["n_folds"],
+            shuffle=cv_cfg["shuffle"],
+            random_state=config["dataset"]["random_state"],
+        )
     cv_results = {}
+    formatted = "stratificata" if config["cross_validation"].get("stratified", False) else "K-Fold"
+    
     for name, model in models.items():
-        logger.info(f"  Cross-validation for model: {name}...")
+        logger.info(f"  Cross-validation {formatted} for model: {name}...")
         t0 = time.time()
         scores = cross_val_score(model, X_train, y_train, cv=cv, scoring="accuracy")
         elapsed = time.time() - t0
@@ -133,7 +142,8 @@ def train_and_evaluate(data: dict, config: dict) -> dict:
 
     # Cross-validation
     if config["cross_validation"].get("enabled", False):
-        logger.info("Cross-validation stratificata (%d-fold)...", config["cross_validation"]["n_folds"])
+        formatted = "stratificata" if config["cross_validation"].get("stratified", False) else "K-Fold"
+        logger.info("Cross-validation %s (%d-fold)...", formatted, config["cross_validation"]["n_folds"])
         cv_results = run_cross_validation(data["X_train"], data["y_train"], models, config)
 
     # Training e valutazione su test

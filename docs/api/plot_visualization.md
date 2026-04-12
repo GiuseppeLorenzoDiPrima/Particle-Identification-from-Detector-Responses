@@ -37,7 +37,7 @@ IEEE_LINESTYLES: list = [
     "-.",
     ":",
     (0, (3, 1, 1, 1)),   # tratto-punto lungo
-    (0, (5, 1)),          # trattini densi
+    (0, (5, 1)),         # trattini densi
 ]
 ```
 
@@ -135,7 +135,7 @@ Restituisce i nomi fisici delle particelle nell'ordine usato dal LabelEncoder.
 **Esempio:**
 ```python
 labels = get_particle_labels(data["label_encoder"])
-# ["elettrone", "kaone", "pione", "protone"]  (ordine alfabetico LabelEncoder)
+# ["positrone", "kaone", "pione", "protone"]  (ordine alfabetico LabelEncoder)
 ```
 
 ---
@@ -342,7 +342,7 @@ Genera le curve ROC one-vs-rest per classificazione multiclasse.
 - Per ogni classe: `sklearn.metrics.roc_curve` e `sklearn.metrics.auc`
 - Curva con colore `IEEE_PALETTE[i]`, linestyle `IEEE_LINESTYLES[i]`, marker `IEEE_MARKERS[i]`
 - Marker ogni `max(1, len(fpr)//10)` punti per non saturare il grafico
-- AUC annotato nella legenda: `"Elettrone (AUC = 0.999)"`
+- AUC annotato nella legenda: `"Positrone (AUC = 0.999)"`
 - Diagonale casuale in grigio `#999999` tratteggiato
 - Override figsize a `[10, 8]`
 
@@ -369,7 +369,7 @@ Grafico della storia del training MLP: loss per epoca e accuracy di validation.
 
 **Genera 2 subplot affiancati:**
 1. **Loss:** train loss (blu, linea continua) e val loss (rosso, tratteggiato)
-2. **Accuracy:** val accuracy (verde)
+2. **Accuracy:** train accuracy (blu, linea continua) e val accuracy (rosso, tratteggiato)
 
 Override figsize a `[14, 8]`.
 
@@ -520,7 +520,7 @@ shap.summary_plot(sv_list[class_idx], X_sample, feature_names=feat_labels, show=
 
 La mappatura `class_idx` → nome particella usa:
 ```python
-CLASS_NAMES = {1: "elettrone", 2: "kaone", 3: "pione", 4: "protone"}
+CLASS_NAMES = {1: "positrone", 2: "kaone", 3: "pione", 4: "protone"}
 ```
 
 > **Nota:** `CLASS_NAMES` usa indici 1-based (il loop `for class_idx, label in enumerate(labels)` produce 0-based, quindi si accede come `CLASS_NAMES.get(class_idx + 1)`).

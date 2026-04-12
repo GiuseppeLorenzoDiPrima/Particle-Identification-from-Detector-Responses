@@ -2,7 +2,7 @@
 
 **File sorgente:** [`data_classes/data_loader.py`](../../data_classes/data_loader.py)
 
-Modulo per il download, caricamento e preprocessing del dataset Particle Identification from Detector Responses da Kaggle.
+Modulo per il download, caricamento e preprocessing del dataset "Particle Identification from Detector Responses" da [Kaggle](https://www.kaggle.com/database/naharrison/particle-identification-from-detector-responses).
 
 ---
 
@@ -12,7 +12,7 @@ Modulo per il download, caricamento e preprocessing del dataset Particle Identif
 
 ```python
 PARTICLE_NAMES: dict[int, str] = {
-    -11: "elettrone",
+    -11: "positrone",
     211: "pione",
     321: "kaone",
     2212: "protone",
@@ -23,7 +23,7 @@ Mappa dai codici PDG (Particle Data Group) numerici ai nomi fisici delle partice
 
 | PDG ID | Particella | Note |
 |---|---|---|
-| `-11` | elettrone | In realtà positrone (e⁺), antiparticella dell'elettrone |
+| `-11` | positrone | Positrone (e⁺), antiparticella dell'elettrone |
 | `211` | pione | Pione positivo (π⁺) |
 | `321` | kaone | Kaone positivo (K⁺) |
 | `2212` | protone | Protone (p) |
@@ -86,7 +86,7 @@ print(config["dataset"]["max_samples"])  # None
 def download_dataset(config: dict) -> str
 ```
 
-Scarica il dataset da Kaggle usando l'API ufficiale (`kaggle` CLI). Se il file CSV è già presente nella directory dei dati, il download viene saltato.
+Scarica il dataset da [Kaggle](https://www.kaggle.com/database/naharrison/particle-identification-from-detector-responses) usando l'API ufficiale (`kaggle` CLI). Se il file CSV è già presente nella directory dei dati, il download viene saltato.
 
 **Parametri:**
 
@@ -194,11 +194,11 @@ config = load_config("config/config.yaml")
 data = load_and_preprocess(config)
 
 print(data["X_train"].shape)   # (3570000, 6)
-print(data["class_names"])     # ["Elettrone", "Kaone", "Pione", "Protone"]
+print(data["class_names"])     # ["Positrone", "Kaone", "Pione", "Protone"]
 print(data["feature_names"])   # ["p", "theta", "beta", "nphe", "ein", "eout"]
 
 # Recuperare i nomi delle classi dall'encoder
 import numpy as np
 classes = data["label_encoder"].classes_
-# array(["elettrone", "kaone", "pione", "protone"])
+# array(["positrone", "kaone", "pione", "protone"])
 ```

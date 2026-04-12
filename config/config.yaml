@@ -89,7 +89,9 @@ deep_learning:
 # --- Interpretabilità (SHAP) ---
 interpretability:
   enabled: true
-  shap_samples: 1500                  # Numero di campioni per calcolo SHAP values
+  shap_samples_tree_explainer: 1500    # Numero di campioni per calcolo SHAP values
+  shap_samples_kernel_explainer: 100   # Numero di campioni per calcolo SHAP values
+  background_clusters: 50              # Numero di cluster per il background
 
 # --- Uncertainty Quantification ---
 uncertainty:
@@ -101,8 +103,6 @@ visualization:
   graph: true                         # Stampa i grafici durante l'esecuzione
   dpi: 600
   figsize: [12, 8]
-  style: "seaborn-v0_8-whitegrid"
-  palette: "Set2"
   comparison_metrics:       # Metriche utilizzate per la creazione dei grafici individuali
     - "accuracy"
     - "precision_macro"

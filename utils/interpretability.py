@@ -59,7 +59,9 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
     fig_dir = config["paths"]["figures_dir"]
     shap_dir = os.path.join(fig_dir, "SHAP")
     os.makedirs(shap_dir, exist_ok=True)
-    n_samples = config["interpretability"]["shap_samples"]
+    n_samples_tree = config["interpretability"]["shap_samples_tree_explainer"]
+    n_samples_kernel = config["interpretability"]["shap_samples_kernel_explainer"]
+    background_clusters = config["interpretability"]["background_clusters"]
     feature_names = data["feature_names"]
     labels = get_particle_labels(data["label_encoder"])
     n_classes = len(labels)
@@ -70,13 +72,13 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
 
     # Subsample per SHAP
     idx = np.random.choice(
-        len(data["X_test"]), min(n_samples, len(data["X_test"])), replace=False
+        len(data["X_test"]), min(n_samples_tree, len(data["X_test"])), replace=False
     )
     X_sample = data["X_test"][idx]
 
     # --- SHAP per modelli tree-based ---
     tree_models = ["Random Forest", "XGBoost", "Decision Tree"]
-    logger.info(f"Analisi SHAP su {n_samples} campioni...")
+    logger.info(f"Analisi SHAP su {n_samples_tree} campioni...")
     for name in tree_models:
         if name not in all_results:
             continue
@@ -109,9 +111,9 @@ def run_shap_analysis(all_results: dict, data: dict, config: dict):
                     return out.cpu().numpy()
 
             # KernelExplainer: usa gli stessi campioni per background e spiegazione
-            n_shap = min(100, len(X_sample))
+            n_shap = min(n_samples_kernel, len(X_sample))
             X_shap = X_sample[:n_shap]
-            background = shap.kmeans(X_shap, 50)
+            background = shap.kmeans(X_shap, background_clusters)
             explainer = shap.KernelExplainer(mlp_predict, background)
             raw_sv = explainer.shap_values(X_shap)
             sv_list = _to_list_format(raw_sv, n_classes)
