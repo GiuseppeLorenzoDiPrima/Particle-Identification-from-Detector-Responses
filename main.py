@@ -35,6 +35,8 @@ import os
 import sys
 import time
 
+from tabulate import tabulate
+
 from data_classes.data_loader import load_config, load_and_preprocess
 from plot.visualization import (
     setup_publication_style,
@@ -232,7 +234,7 @@ def main():
         logger.info("TABELLA FINALE RIEPILOGATIVA DEI RISULTATI OTTENUTI")
         logger.info(f"{'=' * 55}")
         print()
-        logger.info(f"{comparison.to_string(index=False)}")
+        print(tabulate(comparison, headers="keys", tablefmt="grid", floatfmt=".4f", showindex=False, missingval="-"))
         print()
         logger.info(f"Fase 6 completata.")
         logger.info(f"{'=' * 80}")

@@ -122,7 +122,7 @@ def train_mlp(data: dict, config: dict) -> dict:
     # Training loop con early stopping
     best_val_loss = float("inf")
     patience_counter = 0
-    history = {"train_loss": [], "val_loss": [], "val_acc": []}
+    history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
 
     print()
     logger.info(f"Training MLP for a maximum of {cfg['epochs']} epochs with early stopping patience of {cfg['early_stopping_patience']} epochs...")
