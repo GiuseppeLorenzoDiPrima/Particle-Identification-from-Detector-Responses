@@ -9,7 +9,6 @@ Produce:
 
 import logging
 import os
-import re
 
 import numpy as np
 import pandas as pd
@@ -20,17 +19,16 @@ from sklearn.metrics import (
     recall_score,
     classification_report,
     roc_auc_score,
-    pairwise_distances,
 )
 from sklearn.preprocessing import label_binarize
 from sklearn.feature_selection import f_classif
 
+from tabulate import tabulate
 
 from plot.visualization import (
     plot_confusion_matrix,
     plot_roc_curves,
     get_particle_labels,
-    setup_publication_style,
     plot_metrics_comparison,
     plot_metric_groups_comparison,
 )
@@ -147,7 +145,7 @@ def generate_full_report(all_results: dict, data: dict, config: dict):
         f.write("=" * 20 + "\n")
         f.write("  Model Comparison\n")
         f.write("=" * 20 + "\n")
-        f.write(comparison.to_string(index=False))
+        f.write(tabulate(comparison, headers="keys", tablefmt="grid", floatfmt=".4f", showindex=False, missingval="-"))
     logger.info(f"Report di confronto testuale salvato in {str(summary_path).replace(os.sep, '/')}")
 
     # --- Classification report per ogni modello ---
