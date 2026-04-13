@@ -222,7 +222,8 @@ def plot_class_distribution(data: dict, config: dict):
             edgecolor="#333333", linewidth=0.8,
         )
         ax.set_ylabel("Numero di campioni", fontweight="bold")
-        ax.set_title(f"Distribuzione classi — {split_name} set", pad=12)
+        formatted = f"Distribuzione classi — {split_name} set" if split_name != "completo" else "Distribuzione classi — Dataset completo"
+        ax.set_title(formatted, pad=12)
         ax.grid(True, linestyle=":", alpha=0.7, color="#A9A9A9", axis="y", zorder=0)
         for bar in bars:
             bar.set_zorder(2)

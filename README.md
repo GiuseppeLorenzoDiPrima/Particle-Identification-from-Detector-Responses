@@ -123,7 +123,7 @@ Pipeline completa per Particle IDentification (PID) basata su:
 </p>
 
 <p align="center">
-  <em>Top row: Bethe-Bloch and Correlation Matrix. Bottom row: Model Comparison and SHAP Summary (XGBoost).</em>
+  <em>Sopra: Bethe-Bloch e Matrice di Correlazione. Sotto: Comparazione ed Incertezza (entropia).</em>
 </p>
 
 ##### Key Insights
