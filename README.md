@@ -119,7 +119,7 @@ Pipeline completa per Particle IDentification (PID) basata su:
 
 <p align="center">
   <img src=".github\model_comparison_groups.png" height="220" width="45%">
-  <img src=".github\SHAP_summary_xgboost.png" height="220" width="45%">
+  <img src=".github\uncertainty_entropy.png" height="220" width="45%">
 </p>
 
 <p align="center">
